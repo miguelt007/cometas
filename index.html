@@ -168,14 +168,15 @@ function animate() {
       // Objetos animados (asteroides e cometas)
       objetosAnimados.forEach(obj => {
   obj.angulo += obj.velocidade;
+
   obj.mesh.position.set(
     obj.raio * Math.cos(obj.angulo),
     0,
     obj.raio * Math.sin(obj.angulo)
   );
 
-  // Atualiza trilho
-  obj.trilho.push(obj.mesh.getWorldPosition(new THREE.Vector3()));
+  const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
+  obj.trilho.push(posGlobal);
   if (obj.trilho.length > 100) obj.trilho.shift();
 
   const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
@@ -227,7 +228,30 @@ function animate() {
 
 function desenharOrbitaReal(a, e, i, omega, Omega, nome = '', cor = 0xffffff) {
   const escala = 10;
+
+  // Desenhar órbita elíptica
+  const pontos = [];
+  for (let f = 0; f <= 360; f += 2) {
+    const rad = THREE.MathUtils.degToRad(f);
+    const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
+    const x = r * Math.cos(rad);
+    const y = r * Math.sin(rad);
+    pontos.push(new THREE.Vector3(x * escala, y * escala, 0));
+  }
+
+  const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
+  const material = new THREE.LineBasicMaterial({ color: cor });
+  const linha = new THREE.Line(geometria, material);
+  linha.rotation.z = THREE.MathUtils.degToRad(Omega);
+  linha.rotation.x = THREE.MathUtils.degToRad(i);
+  linha.rotation.y = THREE.MathUtils.degToRad(omega);
+  cena.add(linha);
+
+  // Criar objeto animado
   const grupo = new THREE.Group();
+  grupo.rotation.z = linha.rotation.z;
+  grupo.rotation.x = linha.rotation.x;
+  grupo.rotation.y = linha.rotation.y;
   cena.add(grupo);
 
   const mesh = new THREE.Mesh(
@@ -236,9 +260,12 @@ function desenharOrbitaReal(a, e, i, omega, Omega, nome = '', cor = 0xffffff) {
   );
   grupo.add(mesh);
 
-  grupo.rotation.z = THREE.MathUtils.degToRad(Omega);
-  grupo.rotation.x = THREE.MathUtils.degToRad(i);
-  grupo.rotation.y = THREE.MathUtils.degToRad(omega);
+  // Criar rasto
+  const linhaTrilho = new THREE.Line(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.6 })
+  );
+  cena.add(linhaTrilho);
 
   const periodo = Math.sqrt(a * a * a);
   const velocidadeAngular = 2 * Math.PI / (periodo * 365);
@@ -254,13 +281,9 @@ function desenharOrbitaReal(a, e, i, omega, Omega, nome = '', cor = 0xffffff) {
     originalColor: cor,
     tipo: 'Orbital',
     trilho: [],
-    linhaTrilho: new THREE.Line(
-      new THREE.BufferGeometry(),
-      new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.6 })
-    )
+    linhaTrilho: linhaTrilho
   };
 
-  cena.add(objeto.linhaTrilho);
   objetosAnimados.push(objeto);
   return objeto;
 }
