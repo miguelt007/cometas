@@ -200,10 +200,10 @@
         pontos.push(new THREE.Vector3(x * escala, y * escala, 0));
       }
 
-      const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
-      const material = new THREE.LineBasicMaterial({ color: cor });
-      const linha = new THREE.Line(geometria, material);
-      cena.add(linha);
+      // const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
+      // const material = new THREE.LineBasicMaterial({ color: cor });
+      // const linha = new THREE.Line(geometria, material);
+      // cena.add(linha);
 
       // Criar objeto animado
       const mesh = new THREE.Mesh(
