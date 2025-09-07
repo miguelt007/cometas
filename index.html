@@ -2,50 +2,54 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Dados do Asteroide</title>
+  <title>Asteroides Próximos da Terra</title>
   <style>
     table {
-      width: 80%;
+      width: 90%;
       margin: 20px auto;
       border-collapse: collapse;
     }
     th, td {
-      border: 1px solid #999;
-      padding: 10px;
-      text-align: left;
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
     }
     th {
-      background-color: #f2f2f2;
+      background-color: #eee;
     }
   </style>
 </head>
 <body>
-  <h1 style="text-align:center;">Informações do Asteroide</h1>
+  <h1 style="text-align:center;">Asteroides Próximos da Terra</h1>
   <table id="neo-table">
     <thead>
       <tr>
         <th>Nome</th>
-        <th>Magnitude Absoluta</th>
-        <th>Diâmetro Mínimo (km)</th>
-        <th>Diâmetro Máximo (km)</th>
-        <th>É Potencialmente Perigoso?</th>
-        <th>Data de Aproximação</th>
+        <th>Magnitude</th>
+        <th>Diâmetro Mín (km)</th>
+        <th>Diâmetro Máx (km)</th>
+        <th>Perigoso?</th>
+        <th>Data Aproximação</th>
         <th>Velocidade (km/h)</th>
-        <th>Distância da Terra (km)</th>
+        <th>Distância (km)</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    fetch('https://api.nasa.gov/neo/rest/v1/neo/3542519?api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk')
+    const url = 'https://api.nasa.gov/neo/rest/v1/feed?start_date=2025-09-07&end_date=2025-09-07&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk';
+
+    fetch(url)
       .then(response => response.json())
       .then(data => {
-        const neo = data;
-        const approach = neo.close_approach_data[0];
+        const neos = data.near_earth_objects["2025-09-07"];
+        const tbody = document.querySelector('#neo-table tbody');
 
-        const row = `
-          <tr>
+        neos.forEach(neo => {
+          const approach = neo.close_approach_data[0];
+          const row = document.createElement('tr');
+          row.innerHTML = `
             <td>${neo.name}</td>
             <td>${neo.absolute_magnitude_h}</td>
             <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
@@ -54,11 +58,11 @@
             <td>${approach.close_approach_date}</td>
             <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
             <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
-          </tr>
-        `;
-        document.querySelector('#neo-table tbody').innerHTML = row;
+          `;
+          tbody.appendChild(row);
+        });
       })
-      .catch(error => console.error('Erro ao buscar dados da API:', error));
+      .catch(error => console.error('Erro ao buscar dados:', error));
   </script>
 </body>
 </html>
