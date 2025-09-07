@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <title>Asteroides Próximos da Terra</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    input, button {
+      padding: 8px;
+      margin: 10px;
+      font-size: 16px;
+    }
     table {
       width: 90%;
       margin: 20px auto;
@@ -20,7 +30,12 @@
   </style>
 </head>
 <body>
-  <h1 style="text-align:center;">Asteroides Próximos da Terra</h1>
+  <h1>Asteroides Próximos da Terra</h1>
+
+  <label for="date">Escolhe uma data:</label>
+  <input type="date" id="date" value="2025-09-07" />
+  <button onclick="buscarAsteroides()">Ver Asteroides</button>
+
   <table id="neo-table">
     <thead>
       <tr>
@@ -38,31 +53,41 @@
   </table>
 
   <script>
-    const url = 'https://api.nasa.gov/neo/rest/v1/feed?start_date=2025-09-07&end_date=2025-09-07&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk';
+    function buscarAsteroides() {
+      const data = document.getElementById('date').value;
+      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${data}&end_date=${data}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
 
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        const neos = data.near_earth_objects["2025-09-07"];
-        const tbody = document.querySelector('#neo-table tbody');
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const neos = data.near_earth_objects[data];
+          const tbody = document.querySelector('#neo-table tbody');
+          tbody.innerHTML = ''; // Limpa a tabela
 
-        neos.forEach(neo => {
-          const approach = neo.close_approach_data[0];
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${neo.name}</td>
-            <td>${neo.absolute_magnitude_h}</td>
-            <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
-            <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
-            <td>${neo.is_potentially_hazardous_asteroid ? 'Sim' : 'Não'}</td>
-            <td>${approach.close_approach_date}</td>
-            <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
-            <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
-          `;
-          tbody.appendChild(row);
+          neos.forEach(neo => {
+            const approach = neo.close_approach_data[0];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${neo.name}</td>
+              <td>${neo.absolute_magnitude_h}</td>
+              <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
+              <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
+              <td>${neo.is_potentially_hazardous_asteroid ? 'Sim' : 'Não'}</td>
+              <td>${approach.close_approach_date}</td>
+              <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
+              <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
+            `;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Erro ao buscar dados:', error);
+          alert('Não foi possível obter os dados. Verifica a data ou tenta mais tarde.');
         });
-      })
-      .catch(error => console.error('Erro ao buscar dados:', error));
+    }
+
+    // Carrega dados iniciais
+    buscarAsteroides();
   </script>
 </body>
 </html>
