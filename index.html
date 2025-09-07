@@ -255,10 +255,6 @@
               desenhados++;
               if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
             }
-desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
-              desenhados++;
-              if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
-            }
 
             const row = document.createElement('tr');
             if (perigoso) row.classList.add('perigoso');
