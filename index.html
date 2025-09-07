@@ -83,7 +83,7 @@
     let objetosAnimados = [];
     let label;
     let objetoSelecionado = null;
-    let terra, lua, sol;
+    let terra, lua, sol, marte;
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
@@ -127,24 +127,49 @@
       );
       cena.add(lua);
 
+      // Marte em órbita
+      const marteRaioOrbita = 22;
+      marte = new THREE.Mesh(
+        new THREE.SphereGeometry(0.4, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xff6633 })
+      );
+      cena.add(marte);
+
+      const orbitaMarte = new THREE.Mesh(
+        new THREE.TorusGeometry(marteRaioOrbita, 0.02, 16, 100),
+        new THREE.MeshBasicMaterial({ color: 0xff9966 })
+      );
+      orbitaMarte.rotation.x = Math.PI / 2;
+      cena.add(orbitaMarte);
+
       terra.objData = { raio: terraRaioOrbita, angulo: 0, velocidade: 0.001 };
       lua.objData = { raio: luaRaioOrbita, angulo: 0, velocidade: 0.01 };
+      marte.objData = { raio: marteRaioOrbita, angulo: 0, velocidade: 0.0005 };
 
       camera.position.z = 50;
       animate();
     }
+
 function animate() {
       requestAnimationFrame(animate);
       controls.update();
 
+      // Terra
       terra.objData.angulo += terra.objData.velocidade;
       terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
       terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
 
+      // Lua
       lua.objData.angulo += lua.objData.velocidade;
       lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
       lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
 
+      // Marte
+      marte.objData.angulo += marte.objData.velocidade;
+      marte.position.x = marte.objData.raio * Math.cos(marte.objData.angulo);
+      marte.position.z = marte.objData.raio * Math.sin(marte.objData.angulo);
+
+      // Objetos animados (asteroides e cometas)
       objetosAnimados.forEach(obj => {
         obj.angulo += obj.velocidade;
         obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
@@ -248,12 +273,13 @@ function animate() {
 
     function limparOrbita() {
       cena.children = cena.children.filter(obj =>
-        obj === sol || obj === terra || obj === lua || obj.type === 'PerspectiveCamera'
+        obj === sol || obj === terra || obj === lua || obj === marte || obj.type === 'PerspectiveCamera'
       );
       objetosAnimados = [];
       label = null;
       objetoSelecionado = null;
     }
+
 function proximaData(data) {
       const d = new Date(data);
       d.setDate(d.getDate() + 7);
