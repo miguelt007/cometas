@@ -99,10 +99,12 @@
 
   <div id="orbita"></div>
 
+  <!-- Three.js + OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
-    let cena, camera, renderer;
+    let cena, camera, renderer, controls;
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
@@ -110,6 +112,11 @@
       renderer = new THREE.WebGLRenderer();
       renderer.setSize(800, 500);
       document.getElementById('orbita').appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableZoom = true;
+      controls.enablePan = true;
+      controls.enableRotate = true;
 
       const sol = new THREE.Mesh(
         new THREE.SphereGeometry(1, 32, 32),
@@ -147,6 +154,7 @@
 
     function animate() {
       requestAnimationFrame(animate);
+      controls.update();
       renderer.render(cena, camera);
     }
 
