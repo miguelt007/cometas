@@ -99,7 +99,6 @@
 
   <div id="orbita"></div>
 
-  <!-- Three.js + OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -215,7 +214,45 @@
     }
 
     inicializarOrbita();
-const row = document.createElement('tr');
+
+    function buscarAsteroides() {
+      const dataSelecionada = document.getElementById('date').value;
+      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
+
+      document.getElementById('status').textContent = 'A carregar dados...';
+      document.getElementById('erro').textContent = '';
+
+      fetch(url)
+        .then(response => response.json())
+        .then(resposta => {
+          const neos = resposta.near_earth_objects[dataSelecionada];
+          const tbody = document.querySelector('#neo-table tbody');
+          tbody.innerHTML = '';
+          limparOrbita();
+
+          let desenhados = 0;
+          let maiorDistanciaAU = 0;
+
+          neos.forEach((neo, index) => {
+            const approach = neo.close_approach_data[0];
+            const perigoso = neo.is_potentially_hazardous_asteroid;
+
+            let distanciaAU = parseFloat(approach?.miss_distance?.au);
+            if (isNaN(distanciaAU)) {
+              const distanciaKm = parseFloat(approach?.miss_distance?.kilometers);
+              if (!isNaN(distanciaKm)) {
+                distanciaAU = distanciaKm / 149597870.7;
+              }
+            }
+
+            if (!isNaN(distanciaAU)) {
+              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : [43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/RShergold/puzzle-box/tree/010850adb5968c3d24315b5d3711987c3e79673a/script.old.js?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "1")[43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/123wg/visual-case/tree/d693f7054e20f63b45024d6ff837cf4c849e2b8e/src%2Fcommon%2FwzEditor%2Fscene%2FWzScene.js?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "2")[43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/FMABr/Geometry-class/tree/a8bab0dd36c2db02f8c63b9a6119eccefa2da838/src%2Fmain%2Fresources%2Fstatic%2Fjs%2Fteste.js?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "3")[43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/nichengbuya/graphics/tree/bc4da9528db4b4d2cb46c176f3b72aa3bcedf785/src%2Fapp%2Fservice%2Fworld%2Fworld.service.ts?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "4")
+desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
+              desenhados++;
+              if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
+            }
+
+            const row = document.createElement('tr');
             if (perigoso) row.classList.add('perigoso');
 
             row.innerHTML = `
@@ -231,7 +268,6 @@ const row = document.createElement('tr');
             tbody.appendChild(row);
           });
 
-          // Ajusta a posição da câmara com base no asteroide mais distante
           camera.position.z = Math.max(maiorDistanciaAU * 12 + 10, 50);
 
           document.getElementById('status').textContent = `Foram encontrados ${neos.length} asteroides.`;
