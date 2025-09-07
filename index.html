@@ -137,17 +137,14 @@ function animate() {
       requestAnimationFrame(animate);
       controls.update();
 
-      // Movimento orbital da Terra
       terra.objData.angulo += terra.objData.velocidade;
       terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
       terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
 
-      // Movimento orbital da Lua
       lua.objData.angulo += lua.objData.velocidade;
       lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
       lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
 
-      // Movimento dos objetos animados (asteroides e cometas)
       objetosAnimados.forEach(obj => {
         obj.angulo += obj.velocidade;
         obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
@@ -212,7 +209,7 @@ function animate() {
       );
       cena.add(asteroide);
 
-      objetosAnimados.push({
+      const objeto = {
         mesh: asteroide,
         raio: raio,
         angulo: Math.random() * Math.PI * 2,
@@ -220,7 +217,10 @@ function animate() {
         nome: nome,
         originalColor: cor,
         tipo: 'Asteroide'
-      });
+      };
+
+      objetosAnimados.push(objeto);
+      return objeto;
     }
 
     function desenharCometa(distanciaAU, velocidade, nome) {
@@ -232,7 +232,7 @@ function animate() {
       cometa.position.copy(origem);
       cena.add(cometa);
 
-      objetosAnimados.push({
+      const objeto = {
         mesh: cometa,
         raio: 0,
         angulo: 0,
@@ -240,7 +240,10 @@ function animate() {
         nome: nome,
         originalColor: 0x00ffff,
         tipo: 'Cometa'
-      });
+      };
+
+      objetosAnimados.push(objeto);
+      return objeto;
     }
 
     function limparOrbita() {
@@ -294,8 +297,9 @@ function animate() {
             }
           }
 
+          let objetoAsteroide = null;
           if (!isNaN(distanciaAU)) {
-            desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, desenhados * 2, neo.name);
+            objetoAsteroide = desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, desenhados * 2, neo.name);
             desenhados++;
           }
 
@@ -315,22 +319,21 @@ function animate() {
           `;
           tbody.appendChild(row);
 
-          // Clique funcional no asteroide
-          const objetoAsteroide = objetosAnimados[objetosAnimados.length - 1];
-          row.objeto3D = objetoAsteroide;
-
-          row.addEventListener('click', () => {
-            const objeto = row.objeto3D;
-            if (objeto) {
-              if (objetoSelecionado) {
-                objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+          if (objetoAsteroide) {
+            row.objeto3D = objetoAsteroide;
+            row.addEventListener('click', () => {
+              const objeto = row.objeto3D;
+              if (objeto) {
+                if (objetoSelecionado) {
+                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                }
+                objeto.mesh.material.color.setHex(0x3399ff);
+                objetoSelecionado = objeto;
+                mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+                focarObjeto(objeto.mesh.position.clone());
               }
-              objeto.mesh.material.color.setHex(0x3399ff);
-              objetoSelecionado = objeto;
-              mostrarLabel(objeto.nome, objeto.mesh.position.clone());
-              focarObjeto(objeto.mesh.position.clone());
-            }
-          });
+            });
+          }
         });
       })
       .catch(() => {
@@ -352,8 +355,9 @@ function animate() {
           const distanciaAU = parseFloat(c[4]);
           const velocidade = parseFloat(c[7]);
 
+          let objetoCometa = null;
           if (!isNaN(distanciaAU) && !isNaN(velocidade)) {
-            desenharCometa(distanciaAU, velocidade, nome);
+            objetoCometa = desenharCometa(distanciaAU, velocidade, nome);
             desenhados++;
           }
 
@@ -371,22 +375,21 @@ function animate() {
           `;
           document.querySelector('#neo-table tbody').appendChild(row);
 
-          // Clique funcional no cometa
-          const objetoCometa = objetosAnimados[objetosAnimados.length - 1];
-          row.objeto3D = objetoCometa;
-
-          row.addEventListener('click', () => {
-            const objeto = row.objeto3D;
-            if (objeto) {
-              if (objetoSelecionado) {
-                objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+          if (objetoCometa) {
+            row.objeto3D = objetoCometa;
+            row.addEventListener('click', () => {
+              const objeto = row.objeto3D;
+              if (objeto) {
+                if (objetoSelecionado) {
+                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                }
+                objeto.mesh.material.color.setHex(0x3399ff);
+                objetoSelecionado = objeto;
+                mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+                focarObjeto(objeto.mesh.position.clone());
               }
-              objeto.mesh.material.color.setHex(0x3399ff);
-              objetoSelecionado = objeto;
-              mostrarLabel(objeto.nome, objeto.mesh.position.clone());
-              focarObjeto(objeto.mesh.position.clone());
-            }
-          });
+            });
+          }
         });
 
         document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
