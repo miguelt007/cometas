@@ -108,6 +108,7 @@
     let asteroidesAnimados = [];
     let label;
     let asteroideSelecionado = null;
+    let terra, lua;
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
@@ -126,6 +127,33 @@
         new THREE.MeshBasicMaterial({ color: 0xffff00 })
       );
       cena.add(sol);
+
+      // Terra
+      const terraRaioOrbita = 15;
+      terra = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0x3366ff })
+      );
+      terra.position.set(terraRaioOrbita, 0, 0);
+      cena.add(terra);
+
+      const orbitaTerra = new THREE.Mesh(
+        new THREE.TorusGeometry(terraRaioOrbita, 0.02, 16, 100),
+        new THREE.MeshBasicMaterial({ color: 0x9999ff })
+      );
+      orbitaTerra.rotation.x = Math.PI / 2;
+      cena.add(orbitaTerra);
+
+      // Lua
+      const luaRaioOrbita = 1.5;
+      lua = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xcccccc })
+      );
+      cena.add(lua);
+
+      terra.objData = { raio: terraRaioOrbita, angulo: 0, velocidade: 0.001 };
+      lua.objData = { raio: luaRaioOrbita, angulo: 0, velocidade: 0.01 };
 
       camera.position.z = 50;
       animate();
@@ -209,6 +237,16 @@
       requestAnimationFrame(animate);
       controls.update();
 
+      // Terra orbita o Sol
+      terra.objData.angulo += terra.objData.velocidade;
+      terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
+      terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
+
+      // Lua orbita a Terra
+      lua.objData.angulo += lua.objData.velocidade;
+      lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
+      lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
+
       asteroidesAnimados.forEach(obj => {
         obj.angulo += obj.velocidade;
         obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
@@ -217,8 +255,6 @@
 
       renderer.render(cena, camera);
     }
-
-    inicializarOrbita();
 
     function buscarAsteroides() {
       const dataSelecionada = document.getElementById('date').value;
@@ -271,24 +307,18 @@
             `;
             tbody.appendChild(row);
 
-            // Evento de clique na linha da tabela
             row.addEventListener('click', () => {
               const asteroide = asteroidesAnimados[index];
               if (asteroide) {
-                // Remove destaque anterior
                 if (asteroideSelecionado) {
                   asteroideSelecionado.mesh.material.color.setHex(asteroideSelecionado.originalColor);
                 }
 
-                // Destaca o novo asteroide
-                asteroide.mesh.material.color.setHex(0x3399ff); // azul claro
+                asteroide.mesh.material.color.setHex(0x3399ff);
                 asteroideSelecionado = asteroide;
 
-                // Mostra etiqueta
                 const posicao = asteroide.mesh.position.clone();
                 mostrarLabel(asteroide.nome, posicao);
-
-                // Foca a câmara nesse asteroide
                 focarAsteroide(posicao);
               }
             });
