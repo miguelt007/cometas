@@ -49,9 +49,13 @@
 
     #orbita {
       width: 100%;
+      max-width: 800px;
       height: 500px;
-      margin-top: 30px;
+      margin: 30px auto;
       border: 1px solid #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   </style>
 </head>
@@ -88,9 +92,9 @@
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / 500, 0.1, 1000);
+      camera = new THREE.PerspectiveCamera(75, 800 / 500, 0.1, 1000);
       renderer = new THREE.WebGLRenderer();
-      renderer.setSize(window.innerWidth, 500);
+      renderer.setSize(800, 500);
       document.getElementById('orbita').appendChild(renderer.domElement);
 
       // Sol no centro
@@ -100,18 +104,28 @@
       );
       cena.add(sol);
 
-      camera.position.z = 10;
+      camera.position.z = 50;
       animate();
     }
 
     function desenharAsteroide(distanciaAU, cor = 0x00ff00) {
-      const raio = distanciaAU * 2; // escala visual
+      const raio = distanciaAU * 10;
+
+      // Órbita
       const orbita = new THREE.Mesh(
         new THREE.TorusGeometry(raio, 0.02, 16, 100),
         new THREE.MeshBasicMaterial({ color: cor })
       );
       orbita.rotation.x = Math.PI / 2;
       cena.add(orbita);
+
+      // Asteroide como esfera
+      const asteroide = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 16, 16),
+        new THREE.MeshBasicMaterial({ color: cor })
+      );
+      asteroide.position.set(raio, 0, 0);
+      cena.add(asteroide);
     }
 
     function limparOrbita() {
