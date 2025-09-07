@@ -49,6 +49,7 @@
     }
   </style>
 </head>
+// BLOCO 2
 <body>
   <h1>🌍 Asteroides e Cometas Próximos da Terra</h1>
   <label for="date">Escolhe uma data:</label>
@@ -75,7 +76,8 @@
   </table>
 
   <div id="orbita"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
@@ -142,6 +144,7 @@
       camera.position.z = 50;
       animate();
     }
+// BLOCO 3
 function animate() {
       requestAnimationFrame(animate);
       controls.update();
@@ -217,7 +220,7 @@ function animate() {
         const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
         const x = r * Math.cos(rad);
         const y = r * Math.sin(rad);
-        pontos.push(new THREE.Vector3(x * 10, y * 10, 0)); // escala para visualização
+        pontos.push(new THREE.Vector3(x * 10, y * 10, 0));
       }
 
       const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
@@ -236,8 +239,8 @@ function animate() {
       );
       cena.add(mesh);
 
-      const periodo = Math.sqrt(a * a * a); // em anos
-      const velocidadeAngular = 2 * Math.PI / (periodo * 365); // rad/dia
+      const periodo = Math.sqrt(a * a * a);
+      const velocidadeAngular = 2 * Math.PI / (periodo * 365);
       const velocidadePorFrame = velocidadeAngular / 60;
 
       const objeto = {
@@ -262,6 +265,7 @@ function animate() {
       label = null;
       objetoSelecionado = null;
     }
+// BLOCO 4
 function proximaData(data) {
       const d = new Date(data);
       d.setDate(d.getDate() + 7);
@@ -344,12 +348,16 @@ function proximaData(data) {
                     }
                   });
                 }
+              })
+              .catch(() => {
+                console.warn(`Erro ao obter dados orbitais para ${neo.name}`);
               });
           });
         })
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         });
+// BLOCO 5
 // COMETAS
       fetch(urlCometas)
         .then(r => r.json())
@@ -361,7 +369,7 @@ function proximaData(data) {
             return;
           }
 
-          cometas.forEach((c, i) => {
+          cometas.forEach((c) => {
             const nome = c[0];
             const distanciaAU = parseFloat(c[4]);
             const velocidade = parseFloat(c[7]);
