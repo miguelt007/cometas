@@ -108,7 +108,7 @@
     let asteroidesAnimados = [];
     let label;
     let asteroideSelecionado = null;
-    let terra, lua;
+    let terra, lua, sol;
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
@@ -122,13 +122,12 @@
       controls.enablePan = true;
       controls.enableRotate = true;
 
-      const sol = new THREE.Mesh(
+      sol = new THREE.Mesh(
         new THREE.SphereGeometry(1, 32, 32),
         new THREE.MeshBasicMaterial({ color: 0xffff00 })
       );
       cena.add(sol);
 
-      // Terra
       const terraRaioOrbita = 15;
       terra = new THREE.Mesh(
         new THREE.SphereGeometry(0.5, 32, 32),
@@ -143,7 +142,6 @@
       orbitaTerra.rotation.x = Math.PI / 2;
       cena.add(orbitaTerra);
 
-      // Lua
       const luaRaioOrbita = 1.5;
       lua = new THREE.Mesh(
         new THREE.SphereGeometry(0.2, 16, 16),
@@ -162,12 +160,10 @@
       requestAnimationFrame(animate);
       controls.update();
 
-      // Terra orbita o Sol
       terra.objData.angulo += terra.objData.velocidade;
       terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
       terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
 
-      // Lua orbita a Terra
       lua.objData.angulo += lua.objData.velocidade;
       lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
       lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
@@ -248,7 +244,7 @@
 
     function limparOrbita() {
       cena.children = cena.children.filter(obj =>
-        obj === terra || obj === lua || obj.name === 'Sol'
+        obj === sol || obj === terra || obj === lua || obj.type === 'PerspectiveCamera'
       );
       asteroidesAnimados = [];
       label = null;
