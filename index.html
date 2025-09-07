@@ -235,5 +235,18 @@
           }
         })
         .catch(error => {
+document.getElementById('status').textContent = `Foram encontrados ${neos.length} asteroides.`;
+          if (desenhados === 0) {
+            document.getElementById('erro').textContent = '⚠️ Nenhum asteroide foi desenhado no mapa.';
+          }
+        })
+        .catch(error => {
           document.getElementById('status').textContent = '';
-          document.getElementById('erro').textContent = 'Erro ao obter dados. Verifica
+          document.getElementById('erro').textContent = 'Erro ao obter dados. Verifica a data ou tenta mais tarde.';
+        });
+    }
+
+    buscarAsteroides();
+  </script>
+</body>
+</html>
