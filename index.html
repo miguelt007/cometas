@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Asteroides Próximos da Terra</title>
+  <title>Asteroides e Cometas Próximos da Terra</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -73,11 +73,11 @@
   </style>
 </head>
 <body>
-  <h1>🌍 Asteroides Próximos da Terra</h1>
+  <h1>🌍 Asteroides e Cometas Próximos da Terra</h1>
 
   <label for="date">Escolhe uma data:</label>
   <input type="date" id="date" value="2025-09-07" />
-  <button onclick="buscarAsteroides()">🔍 Ver Asteroides</button>
+  <button onclick="buscarObjetos()">🔍 Ver Objetos</button>
 
   <div id="status"></div>
   <div id="erro"></div>
@@ -86,6 +86,7 @@
     <thead>
       <tr>
         <th>Nome</th>
+        <th>Tipo</th>
         <th>Magnitude</th>
         <th>Diâmetro Mín (km)</th>
         <th>Diâmetro Máx (km)</th>
@@ -105,9 +106,9 @@
 
   <script>
     let cena, camera, renderer, controls;
-    let asteroidesAnimados = [];
+    let objetosAnimados = [];
     let label;
-    let asteroideSelecionado = null;
+    let objetoSelecionado = null;
     let terra, lua, sol;
 
     function inicializarOrbita() {
@@ -168,7 +169,7 @@
       lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
       lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
 
-      asteroidesAnimados.forEach(obj => {
+      objetosAnimados.forEach(obj => {
         obj.angulo += obj.velocidade;
         obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
         obj.mesh.position.z = obj.raio * Math.sin(obj.angulo);
@@ -198,7 +199,7 @@
       cena.add(label);
     }
 
-    function focarAsteroide(posicao) {
+    function focarObjeto(posicao) {
       const destino = posicao.clone().add(new THREE.Vector3(0, 0, 10));
       const duracao = 30;
       let frame = 0;
@@ -214,6 +215,37 @@
       }
 
       mover();
+    }
+
+    function desenharCometa(distanciaAU, velocidade, nome) {
+      const direcao = new THREE.Vector3(1, 0, 0).normalize();
+      const origem = new THREE.Vector3(-distanciaAU * 10, 0, 0);
+      const destino = new THREE.Vector3(distanciaAU * 10, 0, 0);
+
+      const cometa = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0x00ffff })
+      );
+      cometa.position.copy(origem);
+      cena.add(cometa);
+
+      const cauda = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.1, 1, 8),
+        new THREE.MeshBasicMaterial({ color: 0x99ccff })
+      );
+      cauda.position.copy(origem.clone().add(direcao.clone().multiplyScalar(-0.5)));
+      cauda.rotation.z = Math.PI / 2;
+      cena.add(cauda);
+
+      objetosAnimados.push({
+        mesh: cometa,
+        raio: 0,
+        angulo: 0,
+        velocidade: velocidade / 1000000,
+        nome: nome,
+        originalColor: 0x00ffff,
+        tipo: 'Cometa'
+      });
     }
 
     function desenharAsteroide(distanciaAU, cor = 0x00ff00, separador = 0, nome = '') {
@@ -232,13 +264,14 @@
       );
       cena.add(asteroide);
 
-      asteroidesAnimados.push({
+      objetosAnimados.push({
         mesh: asteroide,
         raio: raio,
         angulo: Math.random() * Math.PI * 2,
         velocidade: 0.002 + Math.random() * 0.003,
         nome: nome,
-        originalColor: cor
+        originalColor: cor,
+        tipo: 'Asteroide'
       });
     }
 
@@ -246,99 +279,139 @@
       cena.children = cena.children.filter(obj =>
         obj === sol || obj === terra || obj === lua || obj.type === 'PerspectiveCamera'
       );
-      asteroidesAnimados = [];
+      objetosAnimados = [];
       label = null;
-      asteroideSelecionado = null;
+      objetoSelecionado = null;
     }
 
-    function buscarAsteroides() {
+    function buscarObjetos() {
       const dataSelecionada = document.getElementById('date').value;
-      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
+      const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=DEMO_KEY`;
+      const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date=${dataSelecionada}&body=Earth&kind=C`;
 
       document.getElementById('status').textContent = 'A carregar dados...';
       document.getElementById('erro').textContent = '';
 
-      fetch(url)
-        .then(response => response.json())
-        .then(resposta => {
-          const neos = resposta?.near_earth_objects?.[dataSelecionada];
-          if (!Array.isArray(neos)) {
-            document.getElementById('erro').textContent = '⚠️ Nenhum dado encontrado para esta data.';
-            return;
+      Promise.all([
+        fetch(urlAsteroides).then(r => r.json()),
+        fetch(urlCometas).then(r => r.json())
+      ])
+      .then(([dadosAsteroides, dadosCometas]) => {
+        const neos = dadosAsteroides?.near_earth_objects?.[dataSelecionada] || [];
+        const cometas = dadosCometas?.data || [];
+
+        const tbody = document.querySelector('#neo-table tbody');
+        tbody.innerHTML = '';
+        limparOrbita();
+
+        let desenhados = 0;
+        let maiorDistanciaAU = 0;
+
+        neos.forEach((neo, index) => {
+          const approach = neo.close_approach_data[0];
+          const perigoso = neo.is_potentially_hazardous_asteroid;
+
+          let distanciaAU = parseFloat(approach?.miss_distance?.au);
+          if (isNaN(distanciaAU)) {
+            const distanciaKm = parseFloat(approach?.miss_distance?.kilometers);
+            if (!isNaN(distanciaKm)) {
+              distanciaAU = distanciaKm / 149597870.7;
+            }
           }
 
-          const tbody = document.querySelector('#neo-table tbody');
-          tbody.innerHTML = '';
-          limparOrbita();
+          if (!isNaN(distanciaAU)) {
+            desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
+            desenhados++;
+            if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
+          }
 
-          let desenhados = 0;
-          let maiorDistanciaAU = 0;
+          const row = document.createElement('tr');
+          if (perigoso) row.classList.add('perigoso');
 
-          neos.forEach((neo, index) => {
-            const approach = neo.close_approach_data[0];
-            const perigoso = neo.is_potentially_hazardous_asteroid;
+          row.innerHTML = `
+            <td>${neo.name}</td>
+            <td>Asteroide</td>
+            <td>${neo.absolute_magnitude_h}</td>
+            <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
+            <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
+            <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
+            <td>${approach.close_approach_date}</td>
+            <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
+            <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
+          `;
+          tbody.appendChild(row);
 
-            let distanciaAU = parseFloat(approach?.miss_distance?.au);
-            if (isNaN(distanciaAU)) {
-              const distanciaKm = parseFloat(approach?.miss_distance?.kilometers);
-              if (!isNaN(distanciaKm)) {
-                distanciaAU = distanciaKm / 149597870.7;
+          row.addEventListener('click', () => {
+            const objeto = objetosAnimados[index];
+            if (objeto) {
+              if (objetoSelecionado) {
+                objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
               }
+
+              objeto.mesh.material.color.setHex(0x3399ff);
+              objetoSelecionado = objeto;
+
+              const posicao = objeto.mesh.position.clone();
+              mostrarLabel(objeto.nome, posicao);
+              focarObjeto(posicao);
             }
-
-            if (!isNaN(distanciaAU)) {
-              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
-              desenhados++;
-              if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
-            }
-
-            const row = document.createElement('tr');
-            if (perigoso) row.classList.add('perigoso');
-
-            row.innerHTML = `
-              <td>${neo.name}</td>
-              <td>${neo.absolute_magnitude_h}</td>
-              <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
-              <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
-              <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
-              <td>${approach.close_approach_date}</td>
-              <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
-              <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
-            `;
-            tbody.appendChild(row);
-
-            row.addEventListener('click', () => {
-              const asteroide = asteroidesAnimados[index];
-              if (asteroide) {
-                if (asteroideSelecionado) {
-                  asteroideSelecionado.mesh.material.color.setHex(asteroideSelecionado.originalColor);
-                }
-
-                asteroide.mesh.material.color.setHex(0x3399ff);
-                asteroideSelecionado = asteroide;
-
-                const posicao = asteroide.mesh.position.clone();
-                mostrarLabel(asteroide.nome, posicao);
-                focarAsteroide(posicao);
-              }
-            });
           });
-
-          camera.position.z = Math.max(maiorDistanciaAU * 12 + 10, 50);
-
-          document.getElementById('status').textContent = `Foram encontrados ${neos.length} asteroides.`;
-          if (desenhados === 0) {
-            document.getElementById('erro').textContent = '⚠️ Nenhum asteroide foi desenhado no mapa.';
-          }
-        })
-        .catch(error => {
-          document.getElementById('status').textContent = '';
-          document.getElementById('erro').textContent = 'Erro ao obter dados. Verifica a data ou tenta mais tarde.';
         });
+
+        cometas.forEach((c, i) => {
+          const nome = c[0];
+          const distanciaAU = parseFloat(c[4]);
+          const velocidade = parseFloat(c[7]);
+
+          if (!isNaN(distanciaAU) && !isNaN(velocidade)) {
+            desenharCometa(distanciaAU, velocidade, nome);
+            desenhados++;
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${nome}</td>
+            <td>Cometa</td>
+            <td>–</td>
+            <td>–</td>
+            <td>–</td>
+            <td>Não</td>
+            <td>${c[3]}</td>
+            <td>${parseFloat(c[7]).toFixed(2)}</td>
+            <td>${parseFloat(c[4] * 149597870.7).toFixed(0)}</td>
+          `;
+          tbody.appendChild(row);
+
+          row.addEventListener('click', () => {
+            const objeto = objetosAnimados[neos.length + i];
+            if (objeto) {
+              if (objetoSelecionado) {
+                objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+              }
+
+              objeto.mesh.material.color.setHex(0x3399ff);
+              objetoSelecionado = objeto;
+
+              const posicao = objeto.mesh.position.clone();
+              mostrarLabel(objeto.nome, posicao);
+              focarObjeto(posicao);
+            }
+          });
+        });
+
+        document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
+        if (desenhados === 0) {
+          document.getElementById('erro').textContent = '⚠️ Nenhum objeto foi desenhado no mapa.';
+        }
+      })
+      .catch(error => {
+        document.getElementById('status').textContent = '';
+        document.getElementById('erro').textContent = 'Erro ao obter dados. Verifica a data ou tenta mais tarde.';
+      });
     }
 
     inicializarOrbita();
-    buscarAsteroides();
+    buscarObjetos();
   </script>
 </body>
 </html>
