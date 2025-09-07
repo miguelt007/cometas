@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+ll<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Asteroides e Cometas Próximos da Terra!</title>
+  <title>Asteroides e Cometas Próximos da Terra</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,56 +10,28 @@
       padding: 20px;
       background-color: #f9f9f9;
     }
-
-    h1 {
-      margin-bottom: 10px;
-    }
-
+    h1 { margin-bottom: 10px; }
     input, button {
       padding: 8px;
       margin: 10px;
       font-size: 16px;
     }
-
-    #status {
-      margin-top: 10px;
-      font-size: 18px;
-      color: #333;
-    }
-
-    #erro {
-      color: red;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
+    #status { margin-top: 10px; font-size: 18px; color: #333; }
+    #erro { color: red; font-weight: bold; margin-top: 10px; }
     table {
       width: 95%;
       margin: 20px auto;
       border-collapse: collapse;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
-
-    th {
-      background-color: #eee;
-    }
-
-    tr.perigoso {
-      background-color: #ffe5e5;
-      font-weight: bold;
-    }
-
-    tr:hover {
-      background-color: #f1f1f1;
-      cursor: pointer;
-    }
-
+    th { background-color: #eee; }
+    tr.perigoso { background-color: #ffe5e5; font-weight: bold; }
+    tr:hover { background-color: #f1f1f1; cursor: pointer; }
     #orbita {
       width: 100%;
       max-width: 800px;
@@ -74,11 +46,9 @@
 </head>
 <body>
   <h1>🌍 Asteroides e Cometas Próximos da Terra</h1>
-
   <label for="date">Escolhe uma data:</label>
   <input type="date" id="date" value="2025-09-07" />
   <button onclick="buscarObjetos()">🔍 Ver Objetos</button>
-
   <div id="status"></div>
   <div id="erro"></div>
 
@@ -180,7 +150,6 @@
 
     function mostrarLabel(texto, posicao) {
       if (label) cena.remove(label);
-
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       ctx.font = '20px Arial';
@@ -190,7 +159,6 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'black';
       ctx.fillText(texto, 10, 20);
-
       const texture = new THREE.CanvasTexture(canvas);
       const material = new THREE.SpriteMaterial({ map: texture });
       label = new THREE.Sprite(material);
@@ -204,7 +172,6 @@
       const duracao = 30;
       let frame = 0;
       const origem = camera.position.clone();
-
       function mover() {
         frame++;
         const t = frame / duracao;
@@ -213,30 +180,17 @@
         controls.update();
         if (frame < duracao) requestAnimationFrame(mover);
       }
-
       mover();
     }
 
     function desenharCometa(distanciaAU, velocidade, nome) {
-      const direcao = new THREE.Vector3(1, 0, 0).normalize();
       const origem = new THREE.Vector3(-distanciaAU * 10, 0, 0);
-      const destino = new THREE.Vector3(distanciaAU * 10, 0, 0);
-
       const cometa = new THREE.Mesh(
         new THREE.SphereGeometry(0.15, 16, 16),
         new THREE.MeshBasicMaterial({ color: 0x00ffff })
       );
       cometa.position.copy(origem);
       cena.add(cometa);
-
-      const cauda = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.1, 1, 8),
-        new THREE.MeshBasicMaterial({ color: 0x99ccff })
-      );
-      cauda.position.copy(origem.clone().add(direcao.clone().multiplyScalar(-0.5)));
-      cauda.rotation.z = Math.PI / 2;
-      cena.add(cauda);
-
       objetosAnimados.push({
         mesh: cometa,
         raio: 0,
@@ -250,16 +204,8 @@
 
     function desenharAsteroide(distanciaAU, cor = 0x00ff00, separador = 0, nome = '') {
       const raio = Math.max(distanciaAU * 10 + separador, 5);
-
       const orbita = new THREE.Mesh(
         new THREE.TorusGeometry(raio, 0.02, 16, 100),
-        new THREE.MeshBasicMaterial({ color: cor })
-      );
-      orbita.rotation.x = Math.PI / 2;
-      cena.add(orbita);
-
-      const asteroide = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, 16, 16),
         new THREE.MeshBasicMaterial({ color: cor })
       );
       cena.add(asteroide);
@@ -286,7 +232,7 @@
 
     function buscarObjetos() {
       const dataSelecionada = document.getElementById('date').value;
-      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
+      const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
       const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date=${dataSelecionada}&body=Earth&kind=C`;
 
       document.getElementById('status').textContent = 'A carregar dados...';
@@ -298,14 +244,13 @@
       ])
       .then(([dadosAsteroides, dadosCometas]) => {
         const neos = dadosAsteroides?.near_earth_objects?.[dataSelecionada] || [];
-        const cometas = dadosCometas?.data || [];
+        const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
 
         const tbody = document.querySelector('#neo-table tbody');
         tbody.innerHTML = '';
         limparOrbita();
 
         let desenhados = 0;
-        let maiorDistanciaAU = 0;
 
         neos.forEach((neo, index) => {
           const approach = neo.close_approach_data[0];
@@ -322,7 +267,6 @@
           if (!isNaN(distanciaAU)) {
             desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
             desenhados++;
-            if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
           }
 
           const row = document.createElement('tr');
@@ -347,13 +291,10 @@
               if (objetoSelecionado) {
                 objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
               }
-
               objeto.mesh.material.color.setHex(0x3399ff);
               objetoSelecionado = objeto;
-
-              const posicao = objeto.mesh.position.clone();
-              mostrarLabel(objeto.nome, posicao);
-              focarObjeto(posicao);
+              mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+              focarObjeto(objeto.mesh.position.clone());
             }
           });
         });
@@ -377,8 +318,8 @@
             <td>–</td>
             <td>Não</td>
             <td>${c[3]}</td>
-            <td>${parseFloat(c[7]).toFixed(2)}</td>
-            <td>${parseFloat(c[4] * 149597870.7).toFixed(0)}</td>
+            <td>${velocidade.toFixed(2)}</td>
+            <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
           `;
           tbody.appendChild(row);
 
@@ -388,13 +329,10 @@
               if (objetoSelecionado) {
                 objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
               }
-
               objeto.mesh.material.color.setHex(0x3399ff);
               objetoSelecionado = objeto;
-
-              const posicao = objeto.mesh.position.clone();
-              mostrarLabel(objeto.nome, posicao);
-              focarObjeto(posicao);
+              mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+              focarObjeto(objeto.mesh.position.clone());
             }
           });
         });
