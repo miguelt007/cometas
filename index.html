@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Asteroides Próximos da Terra!</title>
+  <title>Asteroides Próximos da Terra</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -134,7 +134,6 @@
         new THREE.SphereGeometry(0.5, 32, 32),
         new THREE.MeshBasicMaterial({ color: 0x3366ff })
       );
-      terra.position.set(terraRaioOrbita, 0, 0);
       cena.add(terra);
 
       const orbitaTerra = new THREE.Mesh(
@@ -157,6 +156,29 @@
 
       camera.position.z = 50;
       animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+
+      // Terra orbita o Sol
+      terra.objData.angulo += terra.objData.velocidade;
+      terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
+      terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
+
+      // Lua orbita a Terra
+      lua.objData.angulo += lua.objData.velocidade;
+      lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
+      lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
+
+      asteroidesAnimados.forEach(obj => {
+        obj.angulo += obj.velocidade;
+        obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
+        obj.mesh.position.z = obj.raio * Math.sin(obj.angulo);
+      });
+
+      renderer.render(cena, camera);
     }
 
     function mostrarLabel(texto, posicao) {
@@ -225,35 +247,12 @@
     }
 
     function limparOrbita() {
-      while (cena.children.length > 1) {
-        cena.remove(cena.children[1]);
-      }
+      cena.children = cena.children.filter(obj =>
+        obj === terra || obj === lua || obj.name === 'Sol'
+      );
       asteroidesAnimados = [];
       label = null;
       asteroideSelecionado = null;
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-
-      // Terra orbita o Sol
-      terra.objData.angulo += terra.objData.velocidade;
-      terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
-      terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
-
-      // Lua orbita a Terra
-      lua.objData.angulo += lua.objData.velocidade;
-      lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
-      lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
-
-      asteroidesAnimados.forEach(obj => {
-        obj.angulo += obj.velocidade;
-        obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
-        obj.mesh.position.z = obj.raio * Math.sin(obj.angulo);
-      });
-
-      renderer.render(cena, camera);
     }
 
     function buscarAsteroides() {
@@ -266,7 +265,12 @@
       fetch(url)
         .then(response => response.json())
         .then(resposta => {
-          const neos = resposta.near_earth_objects[dataSelecionada];
+          const neos = resposta?.near_earth_objects?.[dataSelecionada];
+          if (!Array.isArray(neos)) {
+            document.getElementById('erro').textContent = '⚠️ Nenhum dado encontrado para esta data.';
+            return;
+          }
+
           const tbody = document.querySelector('#neo-table tbody');
           tbody.innerHTML = '';
           limparOrbita();
@@ -337,6 +341,7 @@
         });
     }
 
+    inicializarOrbita();
     buscarAsteroides();
   </script>
 </body>
