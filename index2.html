@@ -270,56 +270,57 @@
           }
 
           neos.forEach((neo) => {
-            const approach = neo.close_approach_data[0];
-            const perigoso = neo.is_potentially_hazardous_asteroid;
-            const cor = perigoso ? 0xff0000 : 0x00ff00;
+  const approach = neo.close_approach_data[0];
+  const perigoso = neo.is_potentially_hazardous_asteroid;
+  const cor = perigoso ? 0xff0000 : 0x00ff00;
 
-            fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=DEMO_KEY`)
-              .then(r => r.json())
-              .then(detalhes => {
-                const orbita = detalhes.orbital_data;
-                const a = parseFloat(orbita.semi_major_axis);
-                const e = parseFloat(orbita.eccentricity);
+  fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=DEMO_KEY`)
+    .then(r => r.json())
+    .then(detalhes => {
+      const orbita = detalhes.orbital_data;
+      const a = parseFloat(orbita.semi_major_axis);
+      const e = parseFloat(orbita.eccentricity);
 
-                let objetoAsteroide = null;
-                if (!isNaN(a) && !isNaN(e)) {
-                  objetoAsteroide = desenharOrbitaReal(a, e, neo.name, cor);
-                  desenhados++;
-                }
+      let objetoAsteroide = null;
+      if (!isNaN(a) && !isNaN(e)) {
+        objetoAsteroide = desenharOrbitaReal(a, e, neo.name, cor); // ← aqui crias o objeto
+        desenhados++;
+      }
 
-                const row = document.createElement('tr');
-                if (perigoso) row.classList.add('perigoso');
+      const row = document.createElement('tr');
+      if (perigoso) row.classList.add('perigoso');
 
-                row.innerHTML = `
-                  <td>${neo.name}</td>
-                  <td>Asteroide</td>
-                  <td>${neo.absolute_magnitude_h}</td>
-                  <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
-                  <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
-                  <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
-                  <td>${approach.close_approach_date}</td>
-                  <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
-                  <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
-                `;
-                tbody.appendChild(row);
+      row.innerHTML = `
+        <td>${neo.name}</td>
+        <td>Asteroide</td>
+        <td>${neo.absolute_magnitude_h}</td>
+        <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
+        <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
+        <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
+        <td>${approach.close_approach_date}</td>
+        <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
+        <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
+      `;
+      tbody.appendChild(row);
 
-                if (objetoAsteroide) {
-                  row.objeto3D = objetoAsteroide;
-                  row.addEventListener('click', () => {
-                    const objeto = row.objeto3D;
-                    if (objetoSelecionado) {
-                      objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
-                    }
-                    objeto.mesh.material.color.setHex(0x3399ff);
-                    objetoSelecionado = objeto;
-                  });
-                }
-              })
-              .catch(() => {
-                console.warn(`Erro ao obter dados orbitais para ${neo.name}`);
-              });
-          });
-        })
+      // ✅ Associar o objeto à linha da tabela
+      if (objetoAsteroide) {
+        row.objeto3D = objetoAsteroide;
+        row.addEventListener('click', () => {
+          const objeto = row.objeto3D;
+          if (objetoSelecionado) {
+            objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+          }
+          objeto.mesh.material.color.setHex(0x3399ff);
+          objetoSelecionado = objeto;
+        });
+      }
+    })
+    .catch(() => {
+      console.warn(`Erro ao obter dados orbitais para ${neo.name}`);
+    });
+    });    
+    })
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         });
