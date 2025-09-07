@@ -354,7 +354,7 @@ function proximaData(data) {
 
             // Destaque no mapa ao clicar
             row.addEventListener('click', () => {
-              const objeto = objetosAnimados.find(o => o.nome === nome);
+              const objeto = objetosAnimados[objetosAnimados.length - cometas.length + i];
               if (objeto) {
                 if (objetoSelecionado) {
                   objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
