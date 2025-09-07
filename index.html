@@ -121,8 +121,8 @@
       animate();
     }
 
-    function desenharAsteroide(distanciaAU, cor = 0x00ff00) {
-      const raio = Math.max(distanciaAU * 10, 5);
+    function desenharAsteroide(distanciaAU, cor = 0x00ff00, separador = 0) {
+      const raio = Math.max(distanciaAU * 10 + separador, 5);
 
       const orbita = new THREE.Mesh(
         new THREE.TorusGeometry(raio, 0.02, 16, 100),
@@ -170,7 +170,7 @@
           let desenhados = 0;
           let maiorDistanciaAU = 0;
 
-          neos.forEach(neo => {
+          neos.forEach((neo, index) => {
             const approach = neo.close_approach_data[0];
             const perigoso = neo.is_potentially_hazardous_asteroid;
 
@@ -183,7 +183,7 @@
             }
 
             if (!isNaN(distanciaAU)) {
-              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00);
+              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2);
               desenhados++;
               if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
             }
@@ -204,7 +204,7 @@
             tbody.appendChild(row);
           });
 
-          camera.position.z = Math.max(maiorDistanciaAU * 12, 50);
+          camera.position.z = Math.max(maiorDistanciaAU * 12 + 10, 50);
 
           document.getElementById('status').textContent = `Foram encontrados ${neos.length} asteroides.`;
           if (desenhados === 0) {
