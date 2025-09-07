@@ -213,49 +213,57 @@ function animate() {
       mover();
     }
 
-    function desenharOrbitaReal(a, e, i, omega, Omega, nome = '', cor = 0xffffff) {
-      const pontos = [];
-      for (let f = 0; f <= 360; f += 2) {
-        const rad = THREE.MathUtils.degToRad(f);
-        const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
-        const x = r * Math.cos(rad);
-        const y = r * Math.sin(rad);
-        pontos.push(new THREE.Vector3(x * 10, y * 10, 0));
-      }
+function desenharOrbitaReal(a, e, i, omega, Omega, nome = '', cor = 0xffffff) {
+  const escala = 10; // mesma escala usada nos planetas
+  const pontos = [];
 
-      const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
-      const material = new THREE.LineBasicMaterial({ color: cor });
-      const linha = new THREE.Line(geometria, material);
+  for (let f = 0; f <= 360; f += 2) {
+    const rad = THREE.MathUtils.degToRad(f);
+    const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
+    const x = r * Math.cos(rad);
+    const y = r * Math.sin(rad);
+    pontos.push(new THREE.Vector3(x * escala, y * escala, 0));
+  }
 
-      linha.rotation.z = THREE.MathUtils.degToRad(Omega);
-      linha.rotation.x = THREE.MathUtils.degToRad(i);
-      linha.rotation.y = THREE.MathUtils.degToRad(omega);
+  const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
+  const material = new THREE.LineBasicMaterial({ color: cor });
+  const linha = new THREE.Line(geometria, material);
 
-      cena.add(linha);
+  linha.rotation.z = THREE.MathUtils.degToRad(Omega);
+  linha.rotation.x = THREE.MathUtils.degToRad(i);
+  linha.rotation.y = THREE.MathUtils.degToRad(omega);
 
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, 16, 16),
-        new THREE.MeshBasicMaterial({ color: cor })
-      );
-      cena.add(mesh);
+  cena.add(linha);
 
-      const periodo = Math.sqrt(a * a * a);
-      const velocidadeAngular = 2 * Math.PI / (periodo * 365);
-      const velocidadePorFrame = velocidadeAngular / 60;
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 16, 16),
+    new THREE.MeshBasicMaterial({ color: cor })
+  );
 
-      const objeto = {
-        mesh: mesh,
-        raio: a * 10,
-        angulo: Math.random() * Math.PI * 2,
-        velocidade: velocidadePorFrame,
-        nome: nome,
-        originalColor: cor,
-        tipo: 'Orbital'
-      };
+  // Aplica mesma rotação ao objeto
+  mesh.rotation.z = linha.rotation.z;
+  mesh.rotation.x = linha.rotation.x;
+  mesh.rotation.y = linha.rotation.y;
 
-      objetosAnimados.push(objeto);
-      return objeto;
-    }
+  cena.add(mesh);
+
+  const periodo = Math.sqrt(a * a * a); // em anos
+  const velocidadeAngular = 2 * Math.PI / (periodo * 365); // rad/dia
+  const velocidadePorFrame = velocidadeAngular / 60;
+
+  const objeto = {
+    mesh: mesh,
+    raio: a * escala,
+    angulo: Math.random() * Math.PI * 2,
+    velocidade: velocidadePorFrame,
+    nome: nome,
+    originalColor: cor,
+    tipo: 'Orbital'
+  };
+
+  objetosAnimados.push(objeto);
+  return objeto;
+}
 
     function limparOrbita() {
       cena.children = cena.children.filter(obj =>
