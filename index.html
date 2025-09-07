@@ -172,7 +172,14 @@
           neos.forEach(neo => {
             const approach = neo.close_approach_data[0];
             const perigoso = neo.is_potentially_hazardous_asteroid;
-            const distanciaAU = approach && approach.miss_distance && parseFloat(approach.miss_distance.au);
+
+            let distanciaAU = parseFloat(approach?.miss_distance?.au);
+            if (isNaN(distanciaAU)) {
+              const distanciaKm = parseFloat(approach?.miss_distance?.kilometers);
+              if (!isNaN(distanciaKm)) {
+                distanciaAU = distanciaKm / 149597870.7;
+              }
+            }
 
             if (!isNaN(distanciaAU)) {
               desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00);
@@ -201,7 +208,6 @@
           }
         })
         .catch(error => {
-          console.error('Erro ao buscar dados:', error);
           document.getElementById('status').textContent = '';
           document.getElementById('erro').textContent = 'Erro ao obter dados. Verifica a data ou tenta mais tarde.';
         });
