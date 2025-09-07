@@ -102,7 +102,8 @@
       );
       cena.add(sol);
 
-      const terraRaioOrbita = 15;
+      const escala = 10;
+      const terraRaioOrbita = 1.0 * escala; // Terra: 1 AU
       terra = new THREE.Mesh(
         new THREE.SphereGeometry(0.5, 32, 32),
         new THREE.MeshBasicMaterial({ color: 0x3366ff })
@@ -123,7 +124,8 @@
       );
       cena.add(lua);
 
-      const marteRaioOrbita = 22;
+      const marteRaioOrbita = 1.524 * escala; // Marte: 1.524 AU
+      orbitaMarte.rotation.x = THREE.MathUtils.degToRad(1.85);
       marte = new THREE.Mesh(
         new THREE.SphereGeometry(0.4, 32, 32),
         new THREE.MeshBasicMaterial({ color: 0xff6633 })
