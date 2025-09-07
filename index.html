@@ -251,18 +251,13 @@ function animate() {
       label = null;
       objetoSelecionado = null;
     }
-function buscarObjetos() {
+    function buscarObjetos() {
       const dataSelecionada = document.getElementById('date').value;
 
       const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
       const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${dataSelecionada}&date-max=${proximaData(dataSelecionada)}&body=Earth&kind=C`;
 
-function proximaData(data) {
-  const d = new Date(data);
-  d.setDate(d.getDate() + 7);
-  return d.toISOString().split('T')[0];
-}
-     document.getElementById('status').textContent = 'A carregar dados...';
+      document.getElementById('status').textContent = 'A carregar dados...';
       document.getElementById('erro').textContent = '';
       const tbody = document.querySelector('#neo-table tbody');
       tbody.innerHTML = '';
@@ -280,7 +275,7 @@ function proximaData(data) {
             document.getElementById('erro').textContent = 'ℹ️ Nenhum asteroide registado para esta data.';
           }
 
-          neos.forEach((neo, index) => {
+          neos.forEach((neo) => {
             const approach = neo.close_approach_data[0];
             const perigoso = neo.is_potentially_hazardous_asteroid;
 
@@ -293,7 +288,7 @@ function proximaData(data) {
             }
 
             if (!isNaN(distanciaAU)) {
-              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
+              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, desenhados * 2, neo.name);
               desenhados++;
             }
 
@@ -312,11 +307,29 @@ function proximaData(data) {
               <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
             `;
             tbody.appendChild(row);
+
+            // Associar diretamente ao último objeto desenhado
+            const objetoAsteroide = objetosAnimados[objetosAnimados.length - 1];
+            row.objeto3D = objetoAsteroide;
+
+            row.addEventListener('click', () => {
+              const objeto = row.objeto3D;
+              if (objeto) {
+                if (objetoSelecionado) {
+                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                }
+                objeto.mesh.material.color.setHex(0x3399ff);
+                objetoSelecionado = objeto;
+                mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+                focarObjeto(objeto.mesh.position.clone());
+              }
+            });
           });
         })
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         });
+    
 // COMETAS
       fetch(urlCometas)
         .then(r => r.json())
