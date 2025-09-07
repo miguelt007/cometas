@@ -1,4 +1,4 @@
-ll<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
@@ -70,8 +70,7 @@ ll<!DOCTYPE html>
   </table>
 
   <div id="orbita"></div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
@@ -89,9 +88,6 @@ ll<!DOCTYPE html>
       document.getElementById('orbita').appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableZoom = true;
-      controls.enablePan = true;
-      controls.enableRotate = true;
 
       sol = new THREE.Mesh(
         new THREE.SphereGeometry(1, 32, 32),
@@ -126,19 +122,21 @@ ll<!DOCTYPE html>
       camera.position.z = 50;
       animate();
     }
-
-    function animate() {
+function animate() {
       requestAnimationFrame(animate);
       controls.update();
 
+      // Movimento orbital da Terra
       terra.objData.angulo += terra.objData.velocidade;
       terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
       terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
 
+      // Movimento orbital da Lua
       lua.objData.angulo += lua.objData.velocidade;
       lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
       lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
 
+      // Movimento dos objetos animados (asteroides e cometas)
       objetosAnimados.forEach(obj => {
         obj.angulo += obj.velocidade;
         obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
@@ -150,6 +148,7 @@ ll<!DOCTYPE html>
 
     function mostrarLabel(texto, posicao) {
       if (label) cena.remove(label);
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       ctx.font = '20px Arial';
@@ -159,6 +158,7 @@ ll<!DOCTYPE html>
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'black';
       ctx.fillText(texto, 10, 20);
+
       const texture = new THREE.CanvasTexture(canvas);
       const material = new THREE.SpriteMaterial({ map: texture });
       label = new THREE.Sprite(material);
@@ -172,6 +172,7 @@ ll<!DOCTYPE html>
       const duracao = 30;
       let frame = 0;
       const origem = camera.position.clone();
+
       function mover() {
         frame++;
         const t = frame / duracao;
@@ -180,32 +181,22 @@ ll<!DOCTYPE html>
         controls.update();
         if (frame < duracao) requestAnimationFrame(mover);
       }
-      mover();
-    }
 
-    function desenharCometa(distanciaAU, velocidade, nome) {
-      const origem = new THREE.Vector3(-distanciaAU * 10, 0, 0);
-      const cometa = new THREE.Mesh(
-        new THREE.SphereGeometry(0.15, 16, 16),
-        new THREE.MeshBasicMaterial({ color: 0x00ffff })
-      );
-      cometa.position.copy(origem);
-      cena.add(cometa);
-      objetosAnimados.push({
-        mesh: cometa,
-        raio: 0,
-        angulo: 0,
-        velocidade: velocidade / 1000000,
-        nome: nome,
-        originalColor: 0x00ffff,
-        tipo: 'Cometa'
-      });
+      mover();
     }
 
     function desenharAsteroide(distanciaAU, cor = 0x00ff00, separador = 0, nome = '') {
       const raio = Math.max(distanciaAU * 10 + separador, 5);
+
       const orbita = new THREE.Mesh(
         new THREE.TorusGeometry(raio, 0.02, 16, 100),
+        new THREE.MeshBasicMaterial({ color: cor })
+      );
+      orbita.rotation.x = Math.PI / 2;
+      cena.add(orbita);
+
+      const asteroide = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 16, 16),
         new THREE.MeshBasicMaterial({ color: cor })
       );
       cena.add(asteroide);
@@ -221,6 +212,26 @@ ll<!DOCTYPE html>
       });
     }
 
+    function desenharCometa(distanciaAU, velocidade, nome) {
+      const origem = new THREE.Vector3(-distanciaAU * 10, 0, 0);
+      const cometa = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0x00ffff })
+      );
+      cometa.position.copy(origem);
+      cena.add(cometa);
+
+      objetosAnimados.push({
+        mesh: cometa,
+        raio: 0,
+        angulo: 0,
+        velocidade: velocidade / 1000000,
+        nome: nome,
+        originalColor: 0x00ffff,
+        tipo: 'Cometa'
+      });
+    }
+
     function limparOrbita() {
       cena.children = cena.children.filter(obj =>
         obj === sol || obj === terra || obj === lua || obj.type === 'PerspectiveCamera'
@@ -229,11 +240,12 @@ ll<!DOCTYPE html>
       label = null;
       objetoSelecionado = null;
     }
-
-    function buscarObjetos() {
+function buscarObjetos() {
       const dataSelecionada = document.getElementById('date').value;
+
       const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
       const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${dataSelecionada}&date-max=${dataSelecionada}&body=Earth&kind=C`;
+
       document.getElementById('status').textContent = 'A carregar dados...';
       document.getElementById('erro').textContent = '';
 
@@ -297,8 +309,7 @@ ll<!DOCTYPE html>
             }
           });
         });
-
-        cometas.forEach((c, i) => {
+cometas.forEach((c, i) => {
           const nome = c[0];
           const distanciaAU = parseFloat(c[4]);
           const velocidade = parseFloat(c[7]);
