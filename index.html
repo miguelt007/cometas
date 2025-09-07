@@ -361,56 +361,64 @@ function proximaData(data) {
             const approach = neo.close_approach_data[0];
             const perigoso = neo.is_potentially_hazardous_asteroid;
 
-            let distanciaAU = parseFloat(approach?.miss_distance?.au);
-            if (isNaN(distanciaAU)) {
-              const distanciaKm = parseFloat(approach?.miss_distance?.kilometers);
-              if (!isNaN(distanciaKm)) {
-                distanciaAU = distanciaKm / 149597870.7;
-              }
-            }
+            const distanciaAU = parseFloat(approach?.miss_distance?.au);
+            const cor = perigoso ? 0xff0000 : 0x00ff00;
 
-            let objetoAsteroide = null;
-            if (!isNaN(distanciaAU)) {
-              objetoAsteroide = desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, desenhados * 2, neo.name);
-              desenhados++;
-            }
+            // Chamada adicional para obter elementos orbitais reais
+            fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`)
+              .then(r => r.json())
+              .then(detalhes => {
+                const orbita = detalhes.orbital_data;
+                const a = parseFloat(orbita.semi_major_axis);
+                const e = parseFloat(orbita.eccentricity);
+                const i = parseFloat(orbita.inclination);
+                const omega = parseFloat(orbita.perihelion_argument);
+                const Omega = parseFloat(orbita.ascending_node_longitude);
 
-            const row = document.createElement('tr');
-            if (perigoso) row.classList.add('perigoso');
+                let objetoAsteroide = null;
+                if (!isNaN(a) && !isNaN(e)) {
+                  objetoAsteroide = desenharOrbitaReal(a, e, i, omega, Omega, neo.name, cor);
+                  desenhados++;
+                }
 
-            row.innerHTML = `
-              <td>${neo.name}</td>
-              <td>Asteroide</td>
-              <td>${neo.absolute_magnitude_h}</td>
-              <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
-              <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
-              <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
-              <td>${approach.close_approach_date}</td>
-              <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
-              <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
-            `;
-            tbody.appendChild(row);
+                const row = document.createElement('tr');
+                if (perigoso) row.classList.add('perigoso');
 
-            if (objetoAsteroide) {
-              row.objeto3D = objetoAsteroide;
-              row.addEventListener('click', () => {
-                const objeto = row.objeto3D;
-                if (objeto) {
-                  if (objetoSelecionado) {
-                    objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
-                  }
-                  objeto.mesh.material.color.setHex(0x3399ff);
-                  objetoSelecionado = objeto;
-                  mostrarLabel(objeto.nome, objeto.mesh.position.clone());
-                  focarObjeto(objeto.mesh.position.clone());
+                row.innerHTML = `
+                  <td>${neo.name}</td>
+                  <td>Asteroide</td>
+                  <td>${neo.absolute_magnitude_h}</td>
+                  <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
+                  <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
+                  <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
+                  <td>${approach.close_approach_date}</td>
+                  <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
+                  <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
+                `;
+                tbody.appendChild(row);
+
+                if (objetoAsteroide) {
+                  row.objeto3D = objetoAsteroide;
+                  row.addEventListener('click', () => {
+                    const objeto = row.objeto3D;
+                    if (objeto) {
+                      if (objetoSelecionado) {
+                        objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                      }
+                      objeto.mesh.material.color.setHex(0x3399ff);
+                      objetoSelecionado = objeto;
+                      mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+                      focarObjeto(objeto.mesh.position.clone());
+                    }
+                  });
                 }
               });
-            }
           });
         })
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         });
+
 // COMETAS
       fetch(urlCometas)
         .then(r => r.json())
@@ -427,9 +435,16 @@ function proximaData(data) {
             const distanciaAU = parseFloat(c[4]);
             const velocidade = parseFloat(c[7]);
 
+            // Exemplo de elementos orbitais fictícios (substituir por dados reais se disponíveis)
+            const a = distanciaAU; // aproximação grosseira
+            const e = 0.85;        // cometas geralmente têm alta excentricidade
+            const i = 45;          // inclinação média
+            const omega = 120;
+            const Omega = 250;
+
             let objetoCometa = null;
-            if (!isNaN(distanciaAU) && !isNaN(velocidade)) {
-              objetoCometa = desenharCometa(distanciaAU, velocidade, nome);
+            if (!isNaN(a) && !isNaN(e)) {
+              objetoCometa = desenharOrbitaReal(a, e, i, omega, Omega, nome, 0x00ffff);
               desenhados++;
             }
 
