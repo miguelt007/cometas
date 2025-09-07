@@ -142,7 +142,13 @@
           neos.forEach(neo => {
             const approach = neo.close_approach_data[0];
             const perigoso = neo.is_potentially_hazardous_asteroid;
-            const distanciaAU = parseFloat(approach.miss_distance.au);
+
+            const distanciaAU = parseFloat(approach?.miss_distance?.au);
+            if (!isNaN(distanciaAU)) {
+              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00);
+            } else {
+              console.warn(`Distância AU inválida para ${neo.name}`);
+            }
 
             const row = document.createElement('tr');
             if (perigoso) row.classList.add('perigoso');
@@ -158,8 +164,6 @@
               <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
             `;
             tbody.appendChild(row);
-
-            desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00);
           });
         })
         .catch(error => {
