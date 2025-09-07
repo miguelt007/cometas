@@ -57,6 +57,7 @@
 
     tr:hover {
       background-color: #f1f1f1;
+      cursor: pointer;
     }
 
     #orbita {
@@ -99,13 +100,14 @@
 
   <div id="orbita"></div>
 
-  <!-- Three.js + OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
     let cena, camera, renderer, controls;
     let asteroidesAnimados = [];
+    let label;
+    let asteroideSelecionado = null;
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
@@ -129,7 +131,46 @@
       animate();
     }
 
-    function desenharAsteroide(distanciaAU, cor = 0x00ff00, separador = 0) {
+    function mostrarLabel(texto, posicao) {
+      if (label) cena.remove(label);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = '20px Arial';
+      canvas.width = ctx.measureText(texto).width + 20;
+      canvas.height = 30;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'black';
+      ctx.fillText(texto, 10, 20);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture });
+      label = new THREE.Sprite(material);
+      label.position.copy(posicao.clone().add(new THREE.Vector3(0, 0.5, 0)));
+      label.scale.set(2, 1, 1);
+      cena.add(label);
+    }
+
+    function focarAsteroide(posicao) {
+      const destino = posicao.clone().add(new THREE.Vector3(0, 0, 10));
+      const duracao = 30;
+      let frame = 0;
+      const origem = camera.position.clone();
+
+      function mover() {
+        frame++;
+        const t = frame / duracao;
+        camera.position.lerpVectors(origem, destino, t);
+        controls.target.lerpVectors(controls.target, posicao, t);
+        controls.update();
+        if (frame < duracao) requestAnimationFrame(mover);
+      }
+
+      mover();
+    }
+
+    function desenharAsteroide(distanciaAU, cor = 0x00ff00, separador = 0, nome = '') {
       const raio = Math.max(distanciaAU * 10 + separador, 5);
 
       const orbita = new THREE.Mesh(
@@ -149,7 +190,9 @@
         mesh: asteroide,
         raio: raio,
         angulo: Math.random() * Math.PI * 2,
-        velocidade: 0.002 + Math.random() * 0.003
+        velocidade: 0.002 + Math.random() * 0.003,
+        nome: nome,
+        originalColor: cor
       });
     }
 
@@ -158,6 +201,8 @@
         cena.remove(cena.children[1]);
       }
       asteroidesAnimados = [];
+      label = null;
+      asteroideSelecionado = null;
     }
 
     function animate() {
@@ -206,7 +251,11 @@
             }
 
             if (!isNaN(distanciaAU)) {
-              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2);
+              desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
+              desenhados++;
+              if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
+            }
+desenharAsteroide(distanciaAU, perigoso ? 0xff0000 : 0x00ff00, index * 2, neo.name);
               desenhados++;
               if (distanciaAU > maiorDistanciaAU) maiorDistanciaAU = distanciaAU;
             }
@@ -225,16 +274,32 @@
               <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
             `;
             tbody.appendChild(row);
+
+            // Evento de clique na linha da tabela
+            row.addEventListener('click', () => {
+              const asteroide = asteroidesAnimados[index];
+              if (asteroide) {
+                // Remove destaque anterior
+                if (asteroideSelecionado) {
+                  asteroideSelecionado.mesh.material.color.setHex(asteroideSelecionado.originalColor);
+                }
+
+                // Destaca o novo asteroide
+                asteroide.mesh.material.color.setHex(0x3399ff); // azul claro
+                asteroideSelecionado = asteroide;
+
+                // Mostra etiqueta
+                const posicao = asteroide.mesh.position.clone();
+                mostrarLabel(asteroide.nome, posicao);
+
+                // Foca a câmara nesse asteroide
+                focarAsteroide(posicao);
+              }
+            });
           });
 
           camera.position.z = Math.max(maiorDistanciaAU * 12 + 10, 50);
 
-          document.getElementById('status').textContent = `Foram encontrados ${neos.length} asteroides.`;
-          if (desenhados === 0) {
-            document.getElementById('erro').textContent = '⚠️ Nenhum asteroide foi desenhado no mapa.';
-          }
-        })
-        .catch(error => {
           document.getElementById('status').textContent = `Foram encontrados ${neos.length} asteroides.`;
           if (desenhados === 0) {
             document.getElementById('erro').textContent = '⚠️ Nenhum asteroide foi desenhado no mapa.';
