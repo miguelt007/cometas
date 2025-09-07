@@ -325,6 +325,7 @@ function proximaData(data) {
 
           if (cometas.length === 0) {
             document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
+            return;
           }
 
           cometas.forEach((c, i) => {
@@ -350,6 +351,20 @@ function proximaData(data) {
               <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
             `;
             document.querySelector('#neo-table tbody').appendChild(row);
+
+            // Destaque no mapa ao clicar
+            row.addEventListener('click', () => {
+              const objeto = objetosAnimados.find(o => o.nome === nome);
+              if (objeto) {
+                if (objetoSelecionado) {
+                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                }
+                objeto.mesh.material.color.setHex(0x3399ff);
+                objetoSelecionado = objeto;
+                mostrarLabel(objeto.nome, objeto.mesh.position.clone());
+                focarObjeto(objeto.mesh.position.clone());
+              }
+            });
           });
 
           document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
