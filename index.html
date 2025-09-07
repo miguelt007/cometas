@@ -167,10 +167,21 @@ function animate() {
 
       // Objetos animados (asteroides e cometas)
       objetosAnimados.forEach(obj => {
-        obj.angulo += obj.velocidade;
-        obj.mesh.position.x = obj.raio * Math.cos(obj.angulo);
-        obj.mesh.position.z = obj.raio * Math.sin(obj.angulo);
-      });
+  obj.angulo += obj.velocidade;
+  obj.mesh.position.set(
+    obj.raio * Math.cos(obj.angulo),
+    0,
+    obj.raio * Math.sin(obj.angulo)
+  );
+
+  // Atualiza trilho
+  obj.trilho.push(obj.mesh.getWorldPosition(new THREE.Vector3()));
+  if (obj.trilho.length > 100) obj.trilho.shift();
+
+  const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+  obj.linhaTrilho.geometry.dispose();
+  obj.linhaTrilho.geometry = trilhoGeometry;
+});
 
       renderer.render(cena, camera);
     }
@@ -215,53 +226,41 @@ function animate() {
     }
 
 function desenharOrbitaReal(a, e, i, omega, Omega, nome = '', cor = 0xffffff) {
-  const escala = 10; // mesma escala usada nos planetas
-  const pontos = [];
-
-  for (let f = 0; f <= 360; f += 2) {
-    const rad = THREE.MathUtils.degToRad(f);
-    const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
-    const x = r * Math.cos(rad);
-    const y = r * Math.sin(rad);
-    pontos.push(new THREE.Vector3(x * escala, y * escala, 0));
-  }
-
-  const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
-  const material = new THREE.LineBasicMaterial({ color: cor });
-  const linha = new THREE.Line(geometria, material);
-
-  linha.rotation.z = THREE.MathUtils.degToRad(Omega);
-  linha.rotation.x = THREE.MathUtils.degToRad(i);
-  linha.rotation.y = THREE.MathUtils.degToRad(omega);
-
-  cena.add(linha);
+  const escala = 10;
+  const grupo = new THREE.Group();
+  cena.add(grupo);
 
   const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 16, 16),
     new THREE.MeshBasicMaterial({ color: cor })
   );
+  grupo.add(mesh);
 
-  // Aplica mesma rotação ao objeto
-  mesh.rotation.z = linha.rotation.z;
-  mesh.rotation.x = linha.rotation.x;
-  mesh.rotation.y = linha.rotation.y;
+  grupo.rotation.z = THREE.MathUtils.degToRad(Omega);
+  grupo.rotation.x = THREE.MathUtils.degToRad(i);
+  grupo.rotation.y = THREE.MathUtils.degToRad(omega);
 
-  cena.add(mesh);
-
-  const periodo = Math.sqrt(a * a * a); // em anos
-  const velocidadeAngular = 2 * Math.PI / (periodo * 365); // rad/dia
+  const periodo = Math.sqrt(a * a * a);
+  const velocidadeAngular = 2 * Math.PI / (periodo * 365);
   const velocidadePorFrame = velocidadeAngular / 60;
 
   const objeto = {
     mesh: mesh,
+    grupo: grupo,
     raio: a * escala,
     angulo: Math.random() * Math.PI * 2,
     velocidade: velocidadePorFrame,
     nome: nome,
     originalColor: cor,
-    tipo: 'Orbital'
+    tipo: 'Orbital',
+    trilho: [],
+    linhaTrilho: new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.6 })
+    )
   };
 
+  cena.add(objeto.linhaTrilho);
   objetosAnimados.push(objeto);
   return objeto;
 }
