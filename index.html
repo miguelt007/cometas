@@ -233,8 +233,7 @@ ll<!DOCTYPE html>
     function buscarObjetos() {
       const dataSelecionada = document.getElementById('date').value;
       const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
-      const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date=${dataSelecionada}&body=Earth&kind=C`;
-
+      const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${dataSelecionada}&date-max=${dataSelecionada}&body=Earth&kind=C`;
       document.getElementById('status').textContent = 'A carregar dados...';
       document.getElementById('erro').textContent = '';
 
