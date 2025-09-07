@@ -47,7 +47,7 @@
 <body>
   <h1>🌍 Asteroides e Cometas Próximos da Terra</h1>
   <label for="date">Escolhe uma data:</label>
-  <input type="date" id="date" value="2025-09-07" />
+  <input type="date" id="date" value="2025-03-01" />
   <button onclick="buscarObjetos()">🔍 Ver Objetos</button>
   <div id="status"></div>
   <div id="erro"></div>
@@ -88,13 +88,18 @@
       document.getElementById('orbita').appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableZoom = true;
+      controls.enablePan = true;
+      controls.enableRotate = true;
 
+      // Sol no centro
       sol = new THREE.Mesh(
         new THREE.SphereGeometry(1, 32, 32),
         new THREE.MeshBasicMaterial({ color: 0xffff00 })
       );
       cena.add(sol);
 
+      // Terra em órbita
       const terraRaioOrbita = 15;
       terra = new THREE.Mesh(
         new THREE.SphereGeometry(0.5, 32, 32),
@@ -109,6 +114,7 @@
       orbitaTerra.rotation.x = Math.PI / 2;
       cena.add(orbitaTerra);
 
+      // Lua em órbita da Terra
       const luaRaioOrbita = 1.5;
       lua = new THREE.Mesh(
         new THREE.SphereGeometry(0.2, 16, 16),
@@ -346,6 +352,10 @@ cometas.forEach((c, i) => {
             }
           });
         });
+
+        if (cometas.length === 0) {
+          document.getElementById('erro').textContent = '⚠️ Nenhum cometa registado neste intervalo.';
+        }
 
         document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
         if (desenhados === 0) {
