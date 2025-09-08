@@ -4,7 +4,69 @@
   <meta charset="UTF-8">
   <title>Asteroides e Cometas Próximos da Terra</title>
   <style>
-    /* Mantém o teu CSS original */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1, label, input, button {
+      display: block;
+      margin: 10px auto;
+      text-align: center;
+    }
+
+    #status, #erro {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #333;
+      white-space: pre-line;
+    }
+
+    #erro {
+      color: red;
+      font-weight: bold;
+    }
+
+    table {
+      width: 95%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #eee;
+    }
+
+    tr.perigoso {
+      background-color: #ffe5e5;
+      font-weight: bold;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+      cursor: pointer;
+    }
+
+    #orbita {
+      width: 100%;
+      max-width: 800px;
+      height: 500px;
+      margin: 30px auto;
+      border: 1px solid #ccc;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
@@ -36,311 +98,339 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
-
   <script>
-    let cena, camera, renderer, controls;
-    let objetosAnimados = [];
-    let objetoSelecionado = null;
-    let terra, lua, sol, marte;
-    let tempoAnterior = Date.now();
+  let cena, camera, renderer, controls;
+  let objetosAnimados = [];
+  let objetoSelecionado = null;
+  let terra, lua, sol, marte;
+  let tempoAnterior = Date.now();
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const hoje = new Date().toISOString().split('T')[0];
-      document.getElementById('date').value = hoje;
-      inicializarOrbita();
-      animate();
-      buscarObjetos();
+  document.addEventListener('DOMContentLoaded', () => {
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = hoje;
+    inicializarOrbita();
+    animate();
+    buscarObjetos();
+  });
+
+  function inicializarOrbita() {
+    cena = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, 800 / 500, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(800, 500);
+    document.getElementById('orbita').appendChild(renderer.domElement);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // Sol
+    sol = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffff00 })
+    );
+    cena.add(sol);
+
+    const escala = 10;
+
+    // Terra
+    const terraRaioOrbita = 1.0 * escala;
+    terra = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x3366ff })
+    );
+    cena.add(terra);
+
+    const orbitaTerra = new THREE.EllipseCurve(0, 0, terraRaioOrbita, terraRaioOrbita, 0, 2 * Math.PI);
+    const pontosTerra = orbitaTerra.getPoints(100);
+    const geometriaTerra = new THREE.BufferGeometry().setFromPoints(pontosTerra);
+    const linhaTerra = new THREE.Line(geometriaTerra, new THREE.LineBasicMaterial({ color: 0x9999ff }));
+    linhaTerra.rotation.x = Math.PI / 2;
+    cena.add(linhaTerra);
+
+    // Lua
+    const luaRaioOrbita = 1.5;
+    lua = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xcccccc })
+    );
+    cena.add(lua);
+
+    // Marte
+    const marteRaioOrbita = 1.524 * escala;
+    marte = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xff6633 })
+    );
+    cena.add(marte);
+
+    const orbitaMarte = new THREE.EllipseCurve(0, 0, marteRaioOrbita, marteRaioOrbita, 0, 2 * Math.PI);
+    const pontosMarte = orbitaMarte.getPoints(100);
+    const geometriaMarte = new THREE.BufferGeometry().setFromPoints(pontosMarte);
+    const linhaMarte = new THREE.Line(geometriaMarte, new THREE.LineBasicMaterial({ color: 0xff9966 }));
+    linhaMarte.rotation.x = Math.PI / 2;
+    cena.add(linhaMarte);
+
+    // Dados orbitais
+    terra.objData = { raio: terraRaioOrbita, angulo: 0, velocidade: 0.001 };
+    lua.objData = { raio: luaRaioOrbita, angulo: 0, velocidade: 0.01 };
+    marte.objData = { raio: marteRaioOrbita, angulo: 0, velocidade: 0.0005 };
+
+    camera.position.z = 50;
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const agora = Date.now();
+    const delta = (agora - tempoAnterior) / 1000;
+    tempoAnterior = agora;
+    const fatorTempo = 0.005;
+
+    // Movimento dos planetas
+    terra.objData.angulo += terra.objData.velocidade * delta * fatorTempo;
+    terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
+    terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
+
+    lua.objData.angulo += lua.objData.velocidade * delta * fatorTempo;
+    lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
+    lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
+
+    marte.objData.angulo += marte.objData.velocidade * delta * fatorTempo;
+    marte.position.x = marte.objData.raio * Math.cos(marte.objData.angulo);
+    marte.position.z = marte.objData.raio * Math.sin(marte.objData.angulo);
+
+    // Objetos animados com rastos
+    objetosAnimados.forEach(obj => {
+      obj.angulo += obj.velocidade * delta * fatorTempo;
+      obj.mesh.position.set(
+        obj.raio * Math.cos(obj.angulo),
+        0,
+        obj.raio * Math.sin(obj.angulo)
+      );
+
+      const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
+      obj.tempoDesdeUltimoPonto = (obj.tempoDesdeUltimoPonto || 0) + delta;
+      if (obj.tempoDesdeUltimoPonto > 0.2) {
+        obj.trilho.push(posGlobal);
+        if (obj.trilho.length > 2000) obj.trilho.shift();
+        obj.tempoDesdeUltimoPonto = 0;
+
+        const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+        if (!obj.linhaTrilho) {
+          const material = new THREE.LineBasicMaterial({ color: obj.originalColor || 0xffffff });
+          obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
+          cena.add(obj.linhaTrilho);
+        } else {
+          obj.linhaTrilho.geometry.dispose();
+          obj.linhaTrilho.geometry = trilhoGeometry;
+        }
+      }
     });
 
-    function inicializarOrbita() {
-      cena = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(75, 800 / 500, 0.1, 1000);
-      renderer = new THREE.WebGLRenderer();
-      renderer.setSize(800, 500);
-      document.getElementById('orbita').appendChild(renderer.domElement);
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.update();
+    renderer.render(cena, camera);
+  }
+  </script>
+  <script>
+  function desenharOrbitaReal(a, e, nome = '', cor = 0xffffff) {
+    const escala = 10;
 
-      sol = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 32, 32),
-        new THREE.MeshBasicMaterial({ color: 0xffff00 })
-      );
-      cena.add(sol);
-
-      const escala = 10;
-      const terraRaioOrbita = 1.0 * escala;
-      terra = new THREE.Mesh(
-        new THREE.SphereGeometry(0.5, 32, 32),
-        new THREE.MeshBasicMaterial({ color: 0x3366ff })
-      );
-      cena.add(terra);
-
-      const luaRaioOrbita = 1.5;
-      lua = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 16, 16),
-        new THREE.MeshBasicMaterial({ color: 0xcccccc })
-      );
-      cena.add(lua);
-
-      const marteRaioOrbita = 1.524 * escala;
-      marte = new THREE.Mesh(
-        new THREE.SphereGeometry(0.4, 32, 32),
-        new THREE.MeshBasicMaterial({ color: 0xff6633 })
-      );
-      cena.add(marte);
-
-      terra.objData = { raio: terraRaioOrbita, angulo: 0, velocidade: 0.001 };
-      lua.objData = { raio: luaRaioOrbita, angulo: 0, velocidade: 0.01 };
-      marte.objData = { raio: marteRaioOrbita, angulo: 0, velocidade: 0.0005 };
-
-      camera.position.z = 50;
+    // Desenhar órbita elíptica no plano XY
+    const pontos = [];
+    for (let f = 0; f <= 360; f += 2) {
+      const rad = THREE.MathUtils.degToRad(f);
+      const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
+      const x = r * Math.cos(rad);
+      const y = r * Math.sin(rad);
+      pontos.push(new THREE.Vector3(x * escala, y * escala, 0));
     }
 
-    function animate() {
-      requestAnimationFrame(animate);
+    const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
+    const material = new THREE.LineBasicMaterial({ color: cor });
+    const linha = new THREE.Line(geometria, material);
+    linha.rotation.x = Math.PI / 2;
+    cena.add(linha);
 
-      const agora = Date.now();
-      const delta = (agora - tempoAnterior) / 1000;
-      tempoAnterior = agora;
-      const fatorTempo = 0.005;
+    // Criar objeto animado
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 16, 16),
+      new THREE.MeshBasicMaterial({ color: cor })
+    );
+    cena.add(mesh);
 
-      // Planetas
-      terra.objData.angulo += terra.objData.velocidade * delta * fatorTempo;
-      terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
-      terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
+    // Criar rasto
+    const linhaTrilho = new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.6 })
+    );
+    cena.add(linhaTrilho);
 
-      lua.objData.angulo += lua.objData.velocidade * delta * fatorTempo;
-      lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
-      lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
+    // Cálculo da velocidade orbital (simplificado)
+    const periodo = Math.sqrt(a * a * a); // em anos
+    const velocidadeAngular = 2 * Math.PI / (periodo * 365); // rad/dia
+    const velocidadePorFrame = velocidadeAngular / 60; // rad/frame
 
-      marte.objData.angulo += marte.objData.velocidade * delta * fatorTempo;
-      marte.position.x = marte.objData.raio * Math.cos(marte.objData.angulo);
-      marte.position.z = marte.objData.raio * Math.sin(marte.objData.angulo);
+    const objeto = {
+      mesh: mesh,
+      raio: a * escala,
+      angulo: Math.random() * Math.PI * 2,
+      velocidade: velocidadePorFrame,
+      nome: nome,
+      originalColor: cor,
+      tipo: 'Orbital',
+      trilho: [],
+      linhaTrilho: linhaTrilho
+    };
 
-      // Objetos animados com rastos
-      objetosAnimados.forEach(obj => {
-        obj.angulo += obj.velocidade * delta * fatorTempo;
-        obj.mesh.position.set(
-          obj.raio * Math.cos(obj.angulo),
-          0,
-          obj.raio * Math.sin(obj.angulo)
-        );
+    objetosAnimados.push(objeto);
+    return objeto;
+  }
 
-        const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
-        obj.tempoDesdeUltimoPonto = (obj.tempoDesdeUltimoPonto || 0) + delta;
-        if (obj.tempoDesdeUltimoPonto > 0.2) {
-          obj.trilho.push(posGlobal);
-          if (obj.trilho.length > 2000) obj.trilho.shift();
-          obj.tempoDesdeUltimoPonto = 0;
+  function proximaData(data) {
+    const d = new Date(data);
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  }
+  </script>
+  <script>
+  function buscarObjetos() {
+    const dataSelecionada = document.getElementById('date').value;
 
-          const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
-          if (!obj.linhaTrilho) {
-            const material = new THREE.LineBasicMaterial({ color: obj.originalColor || 0xffffff });
-            obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
-            cena.add(obj.linhaTrilho);
-          } else {
-            obj.linhaTrilho.geometry.dispose();
-            obj.linhaTrilho.geometry = trilhoGeometry;
-          }
+    const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
+    const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${dataSelecionada}&date-max=${proximaData(dataSelecionada)}&body=Earth&kind=C`;
+
+    document.getElementById('status').textContent = 'A carregar dados...';
+    document.getElementById('erro').textContent = '';
+    const tbody = document.querySelector('#neo-table tbody');
+    tbody.innerHTML = '';
+    objetosAnimados = [];
+
+    let desenhados = 0;
+
+    // ASTEROIDES
+    fetch(urlAsteroides)
+      .then(r => r.json())
+      .then(dadosAsteroides => {
+        const neos = dadosAsteroides?.near_earth_objects?.[dataSelecionada] || [];
+
+        if (neos.length === 0) {
+          document.getElementById('erro').textContent = 'ℹ️ Nenhum asteroide registado para esta data.';
         }
+
+        neos.forEach((neo) => {
+          const approach = neo.close_approach_data[0];
+          const perigoso = neo.is_potentially_hazardous_asteroid;
+          const cor = perigoso ? 0xff0000 : 0x00ff00;
+
+          fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`)
+            .then(r => r.json())
+            .then(detalhes => {
+              const orbita = detalhes.orbital_data;
+              const a = parseFloat(orbita.semi_major_axis);
+              const e = parseFloat(orbita.eccentricity);
+
+              let objetoAsteroide = null;
+              if (!isNaN(a) && !isNaN(e)) {
+                objetoAsteroide = desenharOrbitaReal(a, e, neo.name, cor);
+                desenhados++;
+              }
+
+              const row = document.createElement('tr');
+              if (perigoso) row.classList.add('perigoso');
+
+              row.innerHTML = `
+                <td>${neo.name}</td>
+                <td>Asteroide</td>
+                <td>${neo.absolute_magnitude_h}</td>
+                <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
+                <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
+                <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
+                <td>${approach.close_approach_date}</td>
+                <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
+                <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
+              `;
+              tbody.appendChild(row);
+
+              if (objetoAsteroide) {
+                row.objeto3D = objetoAsteroide;
+                row.addEventListener('click', () => {
+                  const objeto = row.objeto3D;
+                  if (objetoSelecionado) {
+                    objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                  }
+                  objeto.mesh.material.color.setHex(0x3399ff);
+                  objetoSelecionado = objeto;
+                });
+              }
+            })
+            .catch(() => {
+              console.warn(`Erro ao obter dados orbitais para ${neo.name}`);
+            });
+        });
+      })
+      .catch(() => {
+        document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
       });
 
-      controls.update();
-      renderer.render(cena, camera);
-    }
+    // COMETAS
+    fetch(urlCometas)
+      .then(r => r.json())
+      .then(dadosCometas => {
+        const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
 
-    function desenharOrbitaReal(a, e, nome = '', cor = 0xffffff) {
-      const escala = 10;
-      const pontos = [];
-      for (let f = 0; f <= 360; f += 2) {
-        const rad = THREE.MathUtils.degToRad(f);
-        const r = a * (1 - e * e) / (1 + e * Math.cos(rad));
-        const x = r * Math.cos(rad);
-        const y = r * Math.sin(rad);
-        pontos.push(new THREE.Vector3(x * escala, y * escala, 0));
-      }
+        if (cometas.length === 0) {
+          document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
+          return;
+        }
 
-      const geometria = new THREE.BufferGeometry().setFromPoints(pontos);
-      const material = new THREE.LineBasicMaterial({ color: cor });
-      const linha = new THREE.Line(geometria, material);
-      cena.add(linha);
+        cometas.forEach((c) => {
+          const nome = c[0];
+          const distanciaAU = parseFloat(c[4]);
+          const velocidade = parseFloat(c[7]);
 
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, 16, 16),
-        new THREE.MeshBasicMaterial({ color: cor })
-      );
-      cena.add(mesh);
+          const a = distanciaAU;
+          const e = 0.85;
 
-      const linhaTrilho = new THREE.Line(
-        new THREE.BufferGeometry(),
-        new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.6 })
-      );
-      cena.add(linhaTrilho);
-
-      const periodo = Math.sqrt(a * a * a);
-      const velocidadeAngular = 2 * Math.PI / (periodo * 365);
-      const velocidadePorFrame = velocidadeAngular / 60;
-
-      const objeto = {
-        mesh: mesh,
-        raio: a * escala,
-        angulo: Math.random() * Math.PI * 2,
-        velocidade: velocidadePorFrame,
-        nome: nome,
-        originalColor: cor,
-        tipo: 'Orbital',
-        trilho: [],
-        linhaTrilho: linhaTrilho
-      };
-
-      objetosAnimados.push(objeto);
-      return objeto;
-    }
-
-    function proximaData(data) {
-      const d = new Date(data);
-      d.setDate(d.getDate() + 7);
-      return d.toISOString().split('T')[0];
-    }
-
-    function buscarObjetos() {
-      const dataSelecionada = document.getElementById('date').value;
-      const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
-      const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${dataSelecionada}&date-max=${proximaData(dataSelecionada)}&body=Earth&kind=C`;
-
-      document.getElementById('status').textContent = 'A carregar dados...';
-      document.getElementById('erro').textContent = '';
-      const tbody = document.querySelector('#neo-table tbody');
-      tbody.innerHTML = '';
-      objetosAnimados = [];
-
-      let desenhados = 0;
-
-      // ASTEROIDES
-      fetch(urlAsteroides)
-        .then(r => r.json())
-        .then(dadosAsteroides => {
-          const neos = dadosAsteroides?.near_earth_objects?.[dataSelecionada] || [];
-
-          if (neos.length === 0) {
-            document.getElementById('erro').textContent = 'ℹ️ Nenhum asteroide registado para esta data.';
+          let objetoCometa = null;
+          if (!isNaN(a) && !isNaN(e)) {
+            objetoCometa = desenharOrbitaReal(a, e, nome, 0x00ffff);
+            desenhados++;
           }
 
-          neos.forEach((neo) => {
-            const approach = neo.close_approach_data[0];
-            const perigoso = neo.is_potentially_hazardous_asteroid;
-            const cor = perigoso ? 0xff0000 : 0x00ff00;
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${nome}</td>
+            <td>Cometa</td>
+            <td>–</td>
+            <td>–</td>
+            <td>–</td>
+            <td>Não</td>
+            <td>${c[3]}</td>
+            <td>${velocidade.toFixed(2)}</td>
+            <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
+          `;
+          tbody.appendChild(row);
 
-            fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`)
-              .then(r => r.json())
-              .then(detalhes => {
-                const orbita = detalhes.orbital_data;
-                const a = parseFloat(orbita.semi_major_axis);
-                const e = parseFloat(orbita.eccentricity);
-
-                let objetoAsteroide = null;
-                if (!isNaN(a) && !isNaN(e)) {
-                  objetoAsteroide = desenharOrbitaReal(a, e, neo.name, cor);
-                  desenhados++;
-                }
-
-                const row = document.createElement('tr');
-                if (perigoso) row.classList.add('perigoso');
-
-                row.innerHTML = `
-                  <td>${neo.name}</td>
-                  <td>Asteroide</td>
-                  <td>${neo.absolute_magnitude_h}</td>
-                  <td>${neo.estimated_diameter.kilometers.estimated_diameter_min.toFixed(3)}</td>
-                  <td>${neo.estimated_diameter.kilometers.estimated_diameter_max.toFixed(3)}</td>
-                  <td>${perigoso ? '⚠️ Sim' : 'Não'}</td>
-                  <td>${approach.close_approach_date}</td>
-                  <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
-                  <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
-                `;
-                tbody.appendChild(row);
-
-                if (objetoAsteroide) {
-                  row.objeto3D = objetoAsteroide;
-                  row.addEventListener('click', () => {
-                    const objeto = row.objeto3D;
-                    if (objetoSelecionado) {
-                      objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
-                    }
-                    objeto.mesh.material.color.setHex(0x3399ff);
-                    objetoSelecionado = objeto;
-                  });
-                }
-              })
-              .catch(() => {
-                console.warn(`Erro ao obter dados orbitais para ${neo.name}`);
-              });
-          });
-        })
-        .catch(() => {
-          document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
+          if (objetoCometa) {
+            row.objeto3D = objetoCometa;
+            row.addEventListener('click', () => {
+              const objeto = row.objeto3D;
+              if (objetoSelecionado) {
+                objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+              }
+              objeto.mesh.material.color.setHex(0x3399ff);
+              objetoSelecionado = objeto;
+            });
+          }
         });
 
-      // COMETAS
-      fetch(urlCometas)
-        .then(r => r.json())
-        .then(dadosCometas => {
-          const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
-
-          if (cometas.length === 0) {
-            document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
-            return;
-          }
-
-          cometas.forEach((c) => {
-            const nome = c[0];
-            const distanciaAU = parseFloat(c[4]);
-            const velocidade = parseFloat(c[7]);
-
-            const a = distanciaAU;
-            const e = 0.85;
-
-            let objetoCometa = null;
-            if (!isNaN(a) && !isNaN(e)) {
-              objetoCometa = desenharOrbitaReal(a, e, nome, 0x00ffff);
-              desenhados++;
-            }
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${nome}</td>
-              <td>Cometa</td>
-              <td>–</td>
-              <td>–</td>
-              <td>–</td>
-              <td>Não</td>
-              <td>${c[3]}</td>
-              <td>${velocidade.toFixed(2)}</td>
-              <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
-            `;
-            tbody.appendChild(row);
-
-            if (objetoCometa) {
-              row.objeto3D = objetoCometa;
-              row.addEventListener('click', () => {
-                const objeto = row.objeto3D;
-                if (objetoSelecionado) {
-                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
-                }
-                objeto.mesh.material.color.setHex(0x3399ff);
-                objetoSelecionado = objeto;
-              });
-            }
-          });
-
-          document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
-          if (desenhados === 0) {
-            document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
-          }
-        })
-        .catch(() => {
-          document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
-        });
-    }
-  </script>
+        document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
+        if (desenhados === 0) {
+          document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
+        }
+      })
+      .catch(() => {
+        document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
+      });
+  }
+</script>
 </body>
 </html>
