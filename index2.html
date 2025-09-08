@@ -151,7 +151,7 @@
   const delta = (agora - tempoAnterior) / 1000; // tempo em segundos
   tempoAnterior = agora;
 
-  const fatorTempo = 0.001; // ← ajusta este valor para controlar a velocidade
+  const fatorTempo = 0.005; // ← ajusta este valor para controlar a velocidade
 
   // Atualiza os objetos animados (asteroides, cometas, etc.)
   objetosAnimados.forEach(obj => {
