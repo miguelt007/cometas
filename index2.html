@@ -320,7 +320,7 @@
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         })
       <script>
-  // ✅ Este bloco garante que tudo corre depois do DOM estar pronto
+  // ✅ Correto: tudo dentro do DOMContentLoaded
   document.addEventListener('DOMContentLoaded', () => {
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('date').value = hoje;
