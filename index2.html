@@ -164,8 +164,12 @@
     );
 
     const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
-    obj.trilho.push(posGlobal);
-    if (obj.trilho.length > 500) obj.trilho.shift();
+    obj.tempoDesdeUltimoPonto = (obj.tempoDesdeUltimoPonto || 0) + delta;
+if (obj.tempoDesdeUltimoPonto > 0.2) {
+  obj.trilho.push(posGlobal);
+  if (obj.trilho.length > 500) obj.trilho.shift();
+  obj.tempoDesdeUltimoPonto = 0;
+}
 
     const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
     obj.linhaTrilho.geometry.dispose();
