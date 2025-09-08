@@ -175,7 +175,7 @@
 
         const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
         obj.trilho.push(posGlobal);
-        if (obj.trilho.length > 500) obj.trilho.shift();
+        if (obj.trilho.length > 2000) obj.trilho.shift();
 
         const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
         obj.linhaTrilho.geometry.dispose();
