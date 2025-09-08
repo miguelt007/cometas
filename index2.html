@@ -208,14 +208,19 @@ animate(); // ✅ chamada depois da função estar definida
         );
 
         const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
-        obj.trilho.push(posGlobal);
-        if (obj.trilho.length > 2000) obj.trilho.shift();
+obj.trilho.push(posGlobal);
+if (obj.trilho.length > 2000) obj.trilho.shift();
 
-        const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
-        obj.linhaTrilho.geometry.dispose();
-        obj.linhaTrilho.geometry = trilhoGeometry;
-      });
+const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
 
+if (!obj.linhaTrilho) {
+  const material = new THREE.LineBasicMaterial({ color: obj.cor || 0xffffff });
+  obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
+  cena.add(obj.linhaTrilho);
+} else {
+  obj.linhaTrilho.geometry.dispose();
+  obj.linhaTrilho.geometry = trilhoGeometry;
+});
       renderer.render(cena, camera);
     }
 
