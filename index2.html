@@ -142,11 +142,41 @@
       marte.objData = { raio: marteRaioOrbita, angulo: 0, velocidade: 0.0005 };
 
       camera.position.z = 50;
-      animate();
-    }
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
+      let tempoAnterior = Date.now();
+
+  function animate() {
+  requestAnimationFrame(animate);
+
+  const agora = Date.now();
+  const delta = (agora - tempoAnterior) / 1000; // tempo em segundos
+  tempoAnterior = agora;
+
+  const fatorTempo = 0.00005; // ← ajusta este valor para controlar a velocidade
+
+  // Atualiza os objetos animados (asteroides, cometas, etc.)
+  objetosAnimados.forEach(obj => {
+    obj.angulo += obj.velocidade * delta * fatorTempo;
+
+    obj.mesh.position.set(
+      obj.raio * Math.cos(obj.angulo),
+      0,
+      obj.raio * Math.sin(obj.angulo)
+    );
+
+    const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
+    obj.trilho.push(posGlobal);
+    if (obj.trilho.length > 500) obj.trilho.shift();
+
+    const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+    obj.linhaTrilho.geometry.dispose();
+    obj.linhaTrilho.geometry = trilhoGeometry;
+  });
+
+  controls.update(); // ← mantém o controlo da câmara
+  renderer.render(cena, camera);
+}
+
+animate(); // ✅ chamada depois da função estar definida
 
       // Terra
       terra.objData.angulo += terra.objData.velocidade;
