@@ -376,10 +376,10 @@
           if (desenhados === 0) {
             document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
           }
-        })
+        });
         .catch(() => {
           document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
-        });
+        })
     }
 
     inicializarOrbita();
