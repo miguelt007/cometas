@@ -148,39 +148,44 @@
   requestAnimationFrame(animate);
 
   const agora = Date.now();
-  const delta = (agora - tempoAnterior) / 1000; // tempo em segundos
+  const delta = (agora - tempoAnterior) / 1000;
   tempoAnterior = agora;
 
-  const fatorTempo = 0.005; // ← ajusta este valor para controlar a velocidade
+  const fatorTempo = 0.005;
 
-  // Atualiza os objetos animados (asteroides, cometas, etc.)
   objetosAnimados.forEach(obj => {
-  obj.angulo += obj.velocidade;
+    obj.angulo += obj.velocidade * delta * fatorTempo;
 
-  obj.mesh.position.set(
-    obj.raio * Math.cos(obj.angulo),
-    0,
-    obj.raio * Math.sin(obj.angulo)
-  );
+    obj.mesh.position.set(
+      obj.raio * Math.cos(obj.angulo),
+      0,
+      obj.raio * Math.sin(obj.angulo)
+    );
 
-  const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
-  obj.trilho.push(posGlobal);
-  if (obj.trilho.length > 2000) obj.trilho.shift();
+    const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
 
-  const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+    obj.tempoDesdeUltimoPonto = (obj.tempoDesdeUltimoPonto || 0) + delta;
+    if (obj.tempoDesdeUltimoPonto > 0.2) {
+      obj.trilho.push(posGlobal);
+      if (obj.trilho.length > 2000) obj.trilho.shift();
+      obj.tempoDesdeUltimoPonto = 0;
 
-  if (!obj.linhaTrilho) {
-    const material = new THREE.LineBasicMaterial({ color: obj.cor || 0xffffff });
-    obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
-    cena.add(obj.linhaTrilho);
-  } else {
-    obj.linhaTrilho.geometry.dispose();
-    obj.linhaTrilho.geometry = trilhoGeometry;
+      const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+
+      if (!obj.linhaTrilho) {
+        const material = new THREE.LineBasicMaterial({ color: 0xffffff }); // cor fixa para evitar erro
+        obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
+        cena.add(obj.linhaTrilho);
+      } else {
+        obj.linhaTrilho.geometry.dispose();
+        obj.linhaTrilho.geometry = trilhoGeometry;
+      }
+    }
+  });
+
+  controls.update();
+  renderer.render(cena, camera);
   }
-});
-
-renderer.render(cena, camera);
-}
 
 animate(); // ✅ chamada depois da função estar definida
 
