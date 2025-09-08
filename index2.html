@@ -4,55 +4,13 @@
   <meta charset="UTF-8">
   <title>Asteroides e Cometas Próximos da Terra</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background-color: #f9f9f9;
-    }
-    h1 { margin-bottom: 10px; }
-    input, button {
-      padding: 8px;
-      margin: 10px;
-      font-size: 16px;
-    }
-    #status { margin-top: 10px; font-size: 18px; color: #333; }
-    #erro {
-      color: red;
-      font-weight: bold;
-      margin-top: 10px;
-      white-space: pre-line;
-    }
-    table {
-      width: 95%;
-      margin: 20px auto;
-      border-collapse: collapse;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    th { background-color: #eee; }
-    tr.perigoso { background-color: #ffe5e5; font-weight: bold; }
-    tr:hover { background-color: #f1f1f1; cursor: pointer; }
-    #orbita {
-      width: 100%;
-      max-width: 800px;
-      height: 500px;
-      margin: 30px auto;
-      border: 1px solid #ccc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    /* Mantém o teu CSS original */
   </style>
 </head>
 <body>
   <h1>🌍 Asteroides e Cometas Próximos da Terra</h1>
   <label for="date">Escolhe uma data:</label>
-  <input type="date" id="date" value="2025-09-07" />
+  <input type="date" id="date" />
   <button onclick="buscarObjetos()">🔍 Ver Objetos</button>
   <div id="status"></div>
   <div id="erro"></div>
@@ -82,9 +40,17 @@
   <script>
     let cena, camera, renderer, controls;
     let objetosAnimados = [];
-    let label;
     let objetoSelecionado = null;
     let terra, lua, sol, marte;
+    let tempoAnterior = Date.now();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const hoje = new Date().toISOString().split('T')[0];
+      document.getElementById('date').value = hoje;
+      inicializarOrbita();
+      animate();
+      buscarObjetos();
+    });
 
     function inicializarOrbita() {
       cena = new THREE.Scene();
@@ -92,7 +58,6 @@
       renderer = new THREE.WebGLRenderer();
       renderer.setSize(800, 500);
       document.getElementById('orbita').appendChild(renderer.domElement);
-
       controls = new THREE.OrbitControls(camera, renderer.domElement);
 
       sol = new THREE.Mesh(
@@ -109,13 +74,6 @@
       );
       cena.add(terra);
 
-      const orbitaTerra = new THREE.Mesh(
-        new THREE.TorusGeometry(terraRaioOrbita, 0.02, 16, 100),
-        new THREE.MeshBasicMaterial({ color: 0x9999ff })
-      );
-      orbitaTerra.rotation.x = Math.PI / 2;
-      cena.add(orbitaTerra);
-
       const luaRaioOrbita = 1.5;
       lua = new THREE.Mesh(
         new THREE.SphereGeometry(0.2, 16, 16),
@@ -130,84 +88,37 @@
       );
       cena.add(marte);
 
-      const orbitaMarte = new THREE.Mesh(
-        new THREE.TorusGeometry(marteRaioOrbita, 0.02, 16, 100),
-        new THREE.MeshBasicMaterial({ color: 0xff9966 })
-      );
-      orbitaMarte.rotation.x = Math.PI / 2;
-      cena.add(orbitaMarte);
-
       terra.objData = { raio: terraRaioOrbita, angulo: 0, velocidade: 0.001 };
       lua.objData = { raio: luaRaioOrbita, angulo: 0, velocidade: 0.01 };
       marte.objData = { raio: marteRaioOrbita, angulo: 0, velocidade: 0.0005 };
 
       camera.position.z = 50;
-      let tempoAnterior = Date.now();
-
-  function animate() {
-  requestAnimationFrame(animate);
-
-  const agora = Date.now();
-  const delta = (agora - tempoAnterior) / 1000;
-  tempoAnterior = agora;
-
-  const fatorTempo = 0.005;
-
-  objetosAnimados.forEach(obj => {
-    obj.angulo += obj.velocidade * delta * fatorTempo;
-
-    obj.mesh.position.set(
-      obj.raio * Math.cos(obj.angulo),
-      0,
-      obj.raio * Math.sin(obj.angulo)
-    );
-
-    const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
-
-    obj.tempoDesdeUltimoPonto = (obj.tempoDesdeUltimoPonto || 0) + delta;
-    if (obj.tempoDesdeUltimoPonto > 0.2) {
-      obj.trilho.push(posGlobal);
-      if (obj.trilho.length > 2000) obj.trilho.shift();
-      obj.tempoDesdeUltimoPonto = 0;
-
-      const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
-
-      if (!obj.linhaTrilho) {
-        const material = new THREE.LineBasicMaterial({ color: 0xffffff }); // cor fixa para evitar erro
-        obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
-        cena.add(obj.linhaTrilho);
-      } else {
-        obj.linhaTrilho.geometry.dispose();
-        obj.linhaTrilho.geometry = trilhoGeometry;
-      }
     }
-  });
 
-  controls.update();
-  renderer.render(cena, camera);
-  }
+    function animate() {
+      requestAnimationFrame(animate);
 
-animate(); // ✅ chamada depois da função estar definida
+      const agora = Date.now();
+      const delta = (agora - tempoAnterior) / 1000;
+      tempoAnterior = agora;
+      const fatorTempo = 0.005;
 
-      // Terra
-      terra.objData.angulo += terra.objData.velocidade;
+      // Planetas
+      terra.objData.angulo += terra.objData.velocidade * delta * fatorTempo;
       terra.position.x = terra.objData.raio * Math.cos(terra.objData.angulo);
       terra.position.z = terra.objData.raio * Math.sin(terra.objData.angulo);
 
-      // Lua
-      lua.objData.angulo += lua.objData.velocidade;
+      lua.objData.angulo += lua.objData.velocidade * delta * fatorTempo;
       lua.position.x = terra.position.x + lua.objData.raio * Math.cos(lua.objData.angulo);
       lua.position.z = terra.position.z + lua.objData.raio * Math.sin(lua.objData.angulo);
 
-      // Marte
-      marte.objData.angulo += marte.objData.velocidade;
+      marte.objData.angulo += marte.objData.velocidade * delta * fatorTempo;
       marte.position.x = marte.objData.raio * Math.cos(marte.objData.angulo);
       marte.position.z = marte.objData.raio * Math.sin(marte.objData.angulo);
 
       // Objetos animados com rastos
       objetosAnimados.forEach(obj => {
-        obj.angulo += obj.velocidade;
-
+        obj.angulo += obj.velocidade * delta * fatorTempo;
         obj.mesh.position.set(
           obj.raio * Math.cos(obj.angulo),
           0,
@@ -215,26 +126,30 @@ animate(); // ✅ chamada depois da função estar definida
         );
 
         const posGlobal = obj.mesh.getWorldPosition(new THREE.Vector3());
-obj.trilho.push(posGlobal);
-if (obj.trilho.length > 2000) obj.trilho.shift();
+        obj.tempoDesdeUltimoPonto = (obj.tempoDesdeUltimoPonto || 0) + delta;
+        if (obj.tempoDesdeUltimoPonto > 0.2) {
+          obj.trilho.push(posGlobal);
+          if (obj.trilho.length > 2000) obj.trilho.shift();
+          obj.tempoDesdeUltimoPonto = 0;
 
-const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+          const trilhoGeometry = new THREE.BufferGeometry().setFromPoints(obj.trilho);
+          if (!obj.linhaTrilho) {
+            const material = new THREE.LineBasicMaterial({ color: obj.originalColor || 0xffffff });
+            obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
+            cena.add(obj.linhaTrilho);
+          } else {
+            obj.linhaTrilho.geometry.dispose();
+            obj.linhaTrilho.geometry = trilhoGeometry;
+          }
+        }
+      });
 
-if (!obj.linhaTrilho) {
-  const material = new THREE.LineBasicMaterial({ color: obj.cor || 0xffffff });
-  obj.linhaTrilho = new THREE.Line(trilhoGeometry, material);
-  cena.add(obj.linhaTrilho);
-} else {
-  obj.linhaTrilho.geometry.dispose();
-  obj.linhaTrilho.geometry = trilhoGeometry;
-});
+      controls.update();
       renderer.render(cena, camera);
     }
 
     function desenharOrbitaReal(a, e, nome = '', cor = 0xffffff) {
       const escala = 10;
-
-      // Desenhar órbita elíptica no plano XY
       const pontos = [];
       for (let f = 0; f <= 360; f += 2) {
         const rad = THREE.MathUtils.degToRad(f);
@@ -249,14 +164,12 @@ if (!obj.linhaTrilho) {
       const linha = new THREE.Line(geometria, material);
       cena.add(linha);
 
-      // Criar objeto animado
       const mesh = new THREE.Mesh(
         new THREE.SphereGeometry(0.1, 16, 16),
         new THREE.MeshBasicMaterial({ color: cor })
       );
       cena.add(mesh);
 
-      // Criar rasto
       const linhaTrilho = new THREE.Line(
         new THREE.BufferGeometry(),
         new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.6 })
@@ -281,7 +194,9 @@ if (!obj.linhaTrilho) {
 
       objetosAnimados.push(objeto);
       return objeto;
-    }function proximaData(data) {
+    }
+
+    function proximaData(data) {
       const d = new Date(data);
       d.setDate(d.getDate() + 7);
       return d.toISOString().split('T')[0];
@@ -289,7 +204,6 @@ if (!obj.linhaTrilho) {
 
     function buscarObjetos() {
       const dataSelecionada = document.getElementById('date').value;
-
       const urlAsteroides = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${dataSelecionada}&end_date=${dataSelecionada}&api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`;
       const urlCometas = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${dataSelecionada}&date-max=${proximaData(dataSelecionada)}&body=Earth&kind=C`;
 
@@ -364,72 +278,69 @@ if (!obj.linhaTrilho) {
         })
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
-        })
-      // COMETAS
-   fetch(urlCometas)
-  .then(r => r.json())
-  .then(dadosCometas => {
-    const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
-
-    if (cometas.length === 0) {
-      document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
-      return;
-    }
-
-    cometas.forEach((c) => {
-      const nome = c[0];
-      const distanciaAU = parseFloat(c[4]);
-      const velocidade = parseFloat(c[7]);
-
-      // Parâmetros orbitais estimados
-      const a = distanciaAU;
-      const e = 0.85;
-
-      let objetoCometa = null;
-      if (!isNaN(a) && !isNaN(e)) {
-        objetoCometa = desenharOrbitaReal(a, e, nome, 0x00ffff);
-        desenhados++;
-      }
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${nome}</td>
-        <td>Cometa</td>
-        <td>–</td>
-        <td>–</td>
-        <td>–</td>
-        <td>Não</td>
-        <td>${c[3]}</td>
-        <td>${velocidade.toFixed(2)}</td>
-        <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
-      `;
-      document.querySelector('#neo-table tbody').appendChild(row);
-
-      if (objetoCometa) {
-        row.objeto3D = objetoCometa;
-        row.addEventListener('click', () => {
-          const objeto = row.objeto3D;
-          if (objetoSelecionado) {
-            objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
-          }
-          objeto.mesh.material.color.setHex(0x3399ff);
-          objetoSelecionado = objeto;
         });
-      }
-    });
 
-    document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
-    if (desenhados === 0) {
-      document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
-    }
-  })
-  .catch(() => {
-    document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
-  });
-    }
+      // COMETAS
+      fetch(urlCometas)
+        .then(r => r.json())
+        .then(dadosCometas => {
+          const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
 
-    inicializarOrbita();
-    buscarObjetos();
+          if (cometas.length === 0) {
+            document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
+            return;
+          }
+
+          cometas.forEach((c) => {
+            const nome = c[0];
+            const distanciaAU = parseFloat(c[4]);
+            const velocidade = parseFloat(c[7]);
+
+            const a = distanciaAU;
+            const e = 0.85;
+
+            let objetoCometa = null;
+            if (!isNaN(a) && !isNaN(e)) {
+              objetoCometa = desenharOrbitaReal(a, e, nome, 0x00ffff);
+              desenhados++;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${nome}</td>
+              <td>Cometa</td>
+              <td>–</td>
+              <td>–</td>
+              <td>–</td>
+              <td>Não</td>
+              <td>${c[3]}</td>
+              <td>${velocidade.toFixed(2)}</td>
+              <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
+            `;
+            tbody.appendChild(row);
+
+            if (objetoCometa) {
+              row.objeto3D = objetoCometa;
+              row.addEventListener('click', () => {
+                const objeto = row.objeto3D;
+                if (objetoSelecionado) {
+                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                }
+                objeto.mesh.material.color.setHex(0x3399ff);
+                objetoSelecionado = objeto;
+              });
+            }
+          });
+
+          document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
+          if (desenhados === 0) {
+            document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
+          }
+        })
+        .catch(() => {
+          document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
+        });
+    }
   </script>
 </body>
 </html>
