@@ -355,6 +355,7 @@
                   const objeto = row.objeto3D;
                   if (objetoSelecionado) {
                     objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+                    controls.target.copy(objeto.mesh.position);
                   }
                   objeto.mesh.material.color.setHex(0x3399ff);
                   objetoSelecionado = objeto;
