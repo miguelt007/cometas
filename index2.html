@@ -320,11 +320,12 @@
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         })
       <script>
-  // ✅ Define a data atual ao carregar a página
   document.addEventListener('DOMContentLoaded', () => {
+    // ✅ Define a data atual no campo <input type="date">
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('date').value = hoje;
 
+    // ✅ Inicializa a cena e carrega os dados
     inicializarOrbita();
     buscarObjetos();
   });
