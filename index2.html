@@ -274,7 +274,7 @@
   const perigoso = neo.is_potentially_hazardous_asteroid;
   const cor = perigoso ? 0xff0000 : 0x00ff00;
 
-  fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=DEMO_KEY`)
+  fetch(`https://api.nasa.gov/neo/rest/v1/neo/${neo.id}?api_key=QGdjDosaNi342L5tT7qpE1QdWeMcbdb5LeHdHXSk`)
     .then(r => r.json())
     .then(detalhes => {
       const orbita = detalhes.orbital_data;
