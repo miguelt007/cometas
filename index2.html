@@ -319,8 +319,8 @@
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         })
-        <script>
-  // ✅ Este bloco define a data atual ao carregar a página
+      <script>
+  // ✅ Define a data atual ao carregar a página
   document.addEventListener('DOMContentLoaded', () => {
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('date').value = hoje;
