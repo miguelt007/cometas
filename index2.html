@@ -283,7 +283,7 @@
 
       let objetoAsteroide = null;
       if (!isNaN(a) && !isNaN(e)) {
-        objetoAsteroide = desenharOrbitaReal(a, e, neo.name, cor); // ← aqui crias o objeto
+        objetoAsteroide = desenharOrbitaReal(a, e, neo.name, cor); // ← cria objeto com rasto
         desenhados++;
       }
 
@@ -301,7 +301,7 @@
         <td>${parseFloat(approach.relative_velocity.kilometers_per_hour).toFixed(2)}</td>
         <td>${parseFloat(approach.miss_distance.kilometers).toFixed(0)}</td>
       `;
-      tbody.appendChild(row);
+      document.querySelector('#neo-table tbody').appendChild(row);
 
       // ✅ Associar o objeto à linha da tabela
       if (objetoAsteroide) {
@@ -319,7 +319,7 @@
     .catch(() => {
       console.warn(`Erro ao obter dados orbitais para ${neo.name}`);
     });
-    });    
+});
     })
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
