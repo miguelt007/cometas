@@ -320,7 +320,7 @@
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         })
       <script>
-  document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
     // ✅ Define a data atual no campo <input type="date">
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('date').value = hoje;
@@ -329,7 +329,6 @@
     inicializarOrbita();
     buscarObjetos();
   });
-
   function buscarObjetos() {
     // COMETAS
     fetch(urlCometas)
