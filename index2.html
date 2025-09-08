@@ -52,7 +52,7 @@
 <body>
   <h1>🌍 Asteroides e Cometas Próximos da Terra</h1>
   <label for="date">Escolhe uma data:</label>
-  <input type="date" id="date" value="2025-09-07" />
+  <input type="date" id="date" />
   <button onclick="buscarObjetos()">🔍 Ver Objetos</button>
   <div id="status"></div>
   <div id="erro"></div>
@@ -379,6 +379,10 @@
         })
         .catch(() => {
           document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
+        });
+          document.addEventListener('DOMContentLoaded', () => {
+          const hoje = new Date().toISOString().split('T')[0];
+          document.getElementById('date').value = hoje;
         });
     }
 
