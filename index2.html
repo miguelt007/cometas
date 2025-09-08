@@ -319,75 +319,84 @@
         .catch(() => {
           document.getElementById('erro').textContent = '⚠️ Erro ao obter dados de asteroides.';
         });
-      // COMETAS
-      fetch(urlCometas)
-        .then(r => r.json())
-        .then(dadosCometas => {
-          const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
-
-          if (cometas.length === 0) {
-            document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
-            return;
-          }
-
-          cometas.forEach((c) => {
-            const nome = c[0];
-            const distanciaAU = parseFloat(c[4]);
-            const velocidade = parseFloat(c[7]);
-
-            // Parâmetros orbitais estimados
-            const a = distanciaAU;
-            const e = 0.85;
-
-            let objetoCometa = null;
-            if (!isNaN(a) && !isNaN(e)) {
-              objetoCometa = desenharOrbitaReal(a, e, nome, 0x00ffff);
-              desenhados++;
-            }
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${nome}</td>
-              <td>Cometa</td>
-              <td>–</td>
-              <td>–</td>
-              <td>–</td>
-              <td>Não</td>
-              <td>${c[3]}</td>
-              <td>${velocidade.toFixed(2)}</td>
-              <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
-            `;
-            document.querySelector('#neo-table tbody').appendChild(row);
-
-            if (objetoCometa) {
-              row.objeto3D = objetoCometa;
-              row.addEventListener('click', () => {
-                const objeto = row.objeto3D;
-                if (objetoSelecionado) {
-                  objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
-                }
-                objeto.mesh.material.color.setHex(0x3399ff);
-                objetoSelecionado = objeto;
-              });
-            }
-          });
-
-          document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
-          if (desenhados === 0) {
-            document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
-          }
-        })
-        .catch(() => {
-          document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
-        });
-          document.addEventListener('DOMContentLoaded', () => {
-          const hoje = new Date().toISOString().split('T')[0];
-          document.getElementById('date').value = hoje;
-        });
-    }
+      <script>
+  // ✅ Este bloco define a data atual ao carregar a página
+  document.addEventListener('DOMContentLoaded', () => {
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = hoje;
 
     inicializarOrbita();
     buscarObjetos();
-  </script>
+  });
+
+  function buscarObjetos() {
+    // COMETAS
+    fetch(urlCometas)
+      .then(r => r.json())
+      .then(dadosCometas => {
+        const cometas = Array.isArray(dadosCometas?.data) ? dadosCometas.data : [];
+
+        if (cometas.length === 0) {
+          document.getElementById('erro').textContent += '\nℹ️ Nenhum cometa registado neste intervalo.';
+          return;
+        }
+
+        cometas.forEach((c) => {
+          const nome = c[0];
+          const distanciaAU = parseFloat(c[4]);
+          const velocidade = parseFloat(c[7]);
+
+          // Parâmetros orbitais estimados
+          const a = distanciaAU;
+          const e = 0.85;
+
+          let objetoCometa = null;
+          if (!isNaN(a) && !isNaN(e)) {
+            objetoCometa = desenharOrbitaReal(a, e, nome, 0x00ffff);
+            desenhados++;
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${nome}</td>
+            <td>Cometa</td>
+            <td>–</td>
+            <td>–</td>
+            <td>–</td>
+            <td>Não</td>
+            <td>${c[3]}</td>
+            <td>${velocidade.toFixed(2)}</td>
+            <td>${(distanciaAU * 149597870.7).toFixed(0)}</td>
+          `;
+          document.querySelector('#neo-table tbody').appendChild(row);
+
+          if (objetoCometa) {
+            row.objeto3D = objetoCometa;
+            row.addEventListener('click', () => {
+              const objeto = row.objeto3D;
+              if (objetoSelecionado) {
+                objetoSelecionado.mesh.material.color.setHex(objetoSelecionado.originalColor);
+              }
+              objeto.mesh.material.color.setHex(0x3399ff);
+              objetoSelecionado = objeto;
+            });
+          }
+        });
+
+        document.getElementById('status').textContent = `Foram encontrados ${desenhados} objetos próximos da Terra.`;
+        if (desenhados === 0) {
+          document.getElementById('erro').textContent += '\n⚠️ Nenhum objeto foi desenhado no mapa.';
+        }
+      })
+      .catch(() => {
+        document.getElementById('erro').textContent += '\n⚠️ Erro ao obter dados de cometas.';
+      });
+  }
+</script>
 </body>
 </html>
+
+
+
+      
+      
